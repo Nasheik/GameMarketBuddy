@@ -4,22 +4,50 @@ import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SubscribeForm from "./subscribe-form";
 
 const HeroSection = () => {
-  const [email, setEmail] = useState<string>("");
+  // const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [buttonLoading, setButtonLoading] = useState(false);
+  // const toast = useToast();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      setEmail("");
-    }, 1000);
+    // if (!emailInput) {
+    //   return toast({
+    //     description: "Email is required",
+    //     status: "error",
+    //   });
+    // }
+    setButtonLoading(true);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        body: JSON.stringify({ email: emailInput }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        //  toast({
+        //   title: 'Joined successfully.',
+        //   description: "Thank you for joining the waitlist!",
+        //   status: 'success'
+        // });
+      } else {
+        throw new Error(
+          data?.error || "Something went wrong, please try again later"
+        );
+      }
+    } catch (e) {
+      //  toast({
+      //    description: (e as Error).message,
+      //    status: 'error'
+      //  });
+    }
+    setEmailInput("");
+    setButtonLoading(false);
   };
 
   return (
@@ -39,17 +67,18 @@ const HeroSection = () => {
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
               <div className="flex-1">
-                <form
+                {/* <form
                   id="signup"
                   className="flex w-full max-w-sm items-center space-x-2"
-                  onSubmit={handleSubmit}
-                >
-                  <Input
+                  onSubmit={handleFormSubmit}
+                > */}
+                <SubscribeForm />
+                {/* <Input
                     type="email"
                     placeholder="Enter your email"
                     className="flex-1"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
                     required
                     disabled={isSubmitting || isSubmitted}
                   />
@@ -59,8 +88,8 @@ const HeroSection = () => {
                       : isSubmitted
                       ? "Joined!"
                       : "Join Waitlist"}
-                  </Button>
-                </form>
+                  </Button> */}
+                {/* </form> */}
                 <p className="mt-1 text-xs text-muted-foreground">
                   Get early access and exclusive launch offers.
                 </p>
