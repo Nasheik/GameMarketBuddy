@@ -19,10 +19,10 @@ export const metadata: Metadata = {
 };
 
 const navItems = [
-  { title: "Dashboard", path: "/" },
-  { title: "Profile", path: "/profile" },
-  { title: "Settings", path: "/settings" },
-  { title: "Help", path: "/help" },
+  { title: "Dashboard", path: "/", image: "globe.svg" },
+  { title: "Profile", path: "/profile", image: "file.svg" },
+  { title: "Settings", path: "/settings", image: "vercel.svg" },
+  { title: "Help", path: "/help", image: "window.svg" },
 ];
 
 export default function RootLayout({
@@ -36,7 +36,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <div className="flex">
-          <Sidebar navItems={navItems} />
+          {/* <Sidebar navItems={navItems} /> */}
           <main className="flex-1 p-6">{children}</main>
         </div>
       </body>

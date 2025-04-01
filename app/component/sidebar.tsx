@@ -1,10 +1,12 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
 interface NavItem {
   title: string;
   path: string;
+  image: string;
 }
 
 interface SidebarProps {
@@ -12,12 +14,12 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   return (
     <div
-      className={`bg-gray-800 text-white h-screen transition-all duration-300 ${
-        isCollapsed ? "w-16" : "w-64"
+      className={`bg-gray-800 text-white h-[calc(100vh-1rem)] transition-all duration-300 rounded-2xl ml-2 mt-2 ${
+        isCollapsed ? "w-16" : "w-48"
       }`}
     >
       <div className="p-4 flex justify-between items-center">
@@ -39,7 +41,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                     isCollapsed ? "justify-center" : ""
                   }`}
                 >
-                  {!isCollapsed && <span>{item.title}</span>}
+                  {isCollapsed ? (
+                    <Image src={item.image} width={40} height={40} alt={""} />
+                  ) : (
+                    <span>{item.title}</span>
+                  )}
                 </div>
               </Link>
             </li>
