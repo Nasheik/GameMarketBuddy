@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 
 
+
 interface Post {
   id: string;
   content: string;

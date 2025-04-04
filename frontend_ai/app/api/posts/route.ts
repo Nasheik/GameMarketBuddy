@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     if (scheduledFor) {
       const queuePosition = await prisma.post.count({
         where: {
+          status: 'queued',
           scheduledFor: {
             lte: scheduledFor,
           },
