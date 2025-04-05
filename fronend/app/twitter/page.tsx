@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/card";
+
 export default function TwitterPage() {
     return (
       <div className="space-y-6">
