@@ -45,10 +45,10 @@ export default function RootLayout({
                     <Link href={"/"}>Next.js Supabase Starter</Link>
                     <Link href={"/posts"}>Posts</Link>
                     <div className="flex items-center gap-2">
-                      <DeployButton />
+                      {/* <DeployButton /> */}
                     </div>
                   </div>
-                  {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
+                  {!hasEnvVars ? <span>Something went wrong</span> : <HeaderAuth />}
                 </div>
               </nav>
               <div className="flex flex-col gap-20 max-w-5xl p-5">
