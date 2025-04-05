@@ -1,0 +1,31 @@
+For local setup
+
+Install + Run Docker Desktop
+
+CMD:
+npx supabase init
+npx supabase start -x vector
+--- put migration file into supabase/migrations folder
+npx supabase migration list ---- lists the migrations that have been applied
+npx supabase db push -----  pushes the migration files
+npx supabase migration up -----  applies the migration files
+--- put seed file into supabase folder
+npx supabase db reset
+
+
+
+
+Browser:
+http://localhost:54323/project/default
+
+
+
+Migration file name format: 
+20250404021727_init_schema.sql
+✅ 20250404021727 = 14-digit timestamp (YYYYMMDDHHMMSS)
+✅ init_schema = only lowercase letters, numbers, and underscores
+✅ Ends with .sql
+
+Seed file name
+seed.sql
+also make sure to create a user first and the following inserts use that user's uuid

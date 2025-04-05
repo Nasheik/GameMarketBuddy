@@ -43,6 +43,7 @@ export default function RootLayout({
                 <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
                   <div className="flex gap-5 items-center font-semibold">
                     <Link href={"/"}>Next.js Supabase Starter</Link>
+                    <Link href={"/posts"}>Posts</Link>
                     <div className="flex items-center gap-2">
                       <DeployButton />
                     </div>

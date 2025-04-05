@@ -27,14 +27,12 @@ CREATE TABLE games (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Campaigns
-CREATE TABLE campaigns (
+-- Integrations
+CREATE TABLE integrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  description TEXT,
-  start_date DATE,
-  end_date DATE,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  platform TEXT CHECK (platform IN ('twitter', 'tiktok', 'youtube', 'email')) NOT NULL,
+  status TEXT CHECK (status IN ('connected', 'disconnected')) DEFAULT 'disconnected',
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -42,12 +40,19 @@ CREATE TABLE campaigns (
 CREATE TABLE scheduled_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-  campaign_id UUID REFERENCES campaigns(id) ON DELETE SET NULL,
-  platform TEXT CHECK (platform IN ('twitter', 'tiktok', 'youtube', 'email')) NOT NULL,
-  content TEXT NOT NULL,
+  content TEXT,
   media_url TEXT,
-  scheduled_time TIMESTAMPTZ NOT NULL,
-  status TEXT CHECK (status IN ('scheduled', 'posted', 'failed')) DEFAULT 'scheduled',
+  scheduled_time TIMESTAMPTZ,
+  status TEXT CHECK (status IN ('draft', 'scheduled', 'sent', 'failed')) DEFAULT 'draft',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Scheduled Post Targets
+CREATE TABLE scheduled_post_targets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scheduled_post_id UUID REFERENCES scheduled_posts(id) ON DELETE CASCADE,
+  platform TEXT CHECK (platform IN ('twitter', 'tiktok', 'youtube', 'email')),
+  integration_id UUID REFERENCES integrations(id), -- optional: used for posting
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -87,15 +92,6 @@ CREATE TABLE post_templates (
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   media_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Integrations
-CREATE TABLE integrations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-  platform TEXT CHECK (platform IN ('twitter', 'tiktok', 'youtube', 'email')) NOT NULL,
-  status TEXT CHECK (status IN ('connected', 'disconnected')) DEFAULT 'disconnected',
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
