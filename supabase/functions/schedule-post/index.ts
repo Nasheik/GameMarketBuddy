@@ -3,15 +3,15 @@
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-console.log("Hello from Functions!")
+console.log("Hello from Functions!");
 
 Deno.serve(async (req) => {
   const body = await req.json();
-  console.log('[Debug] Raw body:', body);
+  console.log("[Debug] Raw body:", body);
   const id = body.record.id;
-  console.log('[Info] Received id:', id);
+  console.log("[Info] Received id:", id);
 
   const jobPayload = {
     id,
@@ -19,15 +19,23 @@ Deno.serve(async (req) => {
   };
 
   // Send job to your external job server
-  const res = await fetch("https://localhost:3333/enqueue", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(jobPayload),
-  });
+  try {
+    const response = await fetch("http://host.docker.internal:3333/enqueue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(jobPayload),
+    });
+
+    console.log("[Success] Webhook response:", await response.text());
+  } catch (error) {
+    console.error(
+      "[Fetch Error]",
+      error instanceof Error ? error.message : "An unknown error occurred",
+    );
+  }
 
   return new Response("Job enqueued");
 });
-
 
 /* To invoke locally:
 
@@ -40,4 +48,3 @@ Deno.serve(async (req) => {
     --data '{"name":"Functions"}'
 
 */
-
