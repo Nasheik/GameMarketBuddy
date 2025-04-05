@@ -20,7 +20,7 @@ http://localhost:54323/project/default
 
 
 
-Migration file name format: 
+Migration file name format:(triggers can also be put in here) 
 20250404021727_init_schema.sql
 ✅ 20250404021727 = 14-digit timestamp (YYYYMMDDHHMMSS)
 ✅ init_schema = only lowercase letters, numbers, and underscores
@@ -29,3 +29,10 @@ Migration file name format:
 Seed file name
 seed.sql
 also make sure to create a user first and the following inserts use that user's uuid
+
+
+
+Server Edge Functions:
+npx supabase functions serve
+
+Use webhook to trigger edge functions
