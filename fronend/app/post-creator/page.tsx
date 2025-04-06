@@ -113,8 +113,6 @@ export default function PostCreator() {
         }`}>
           <h2 className="text-xl font-semibold mb-4">Create New Post</h2>
           <PostForm
-            postType={postType}
-            setPostType={setPostType}
             title={title}
             setTitle={setTitle}
             content={content}
@@ -126,12 +124,6 @@ export default function PostCreator() {
             setIsScheduled={setIsScheduled}
             scheduleDateTime={scheduleDateTime}
             setScheduleDateTime={setScheduleDateTime}
-            discountCode={discountCode}
-            setDiscountCode={setDiscountCode}
-            validUntil={validUntil}
-            setValidUntil={setValidUntil}
-            announcementType={announcementType}
-            setAnnouncementType={setAnnouncementType}
             selectedPlatforms={selectedPlatforms}
             handlePlatformChange={handlePlatformChange}
           />
@@ -152,14 +144,14 @@ export default function PostCreator() {
         />
       </div>
 
-      <PostList
+      {/* <PostList
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         drafts={drafts}
         scheduledPosts={scheduledPosts}
         handleEditPost={handleEditPost}
         handleDeletePost={handleDeletePost}
-      />
+      /> */}
     </div>
   );
 } 

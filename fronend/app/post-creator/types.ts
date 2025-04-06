@@ -14,8 +14,6 @@ export interface Post {
 }
 
 export interface PostFormProps {
-  postType: PostType;
-  setPostType: (type: PostType) => void;
   title: string;
   setTitle: (title: string) => void;
   content: string;
@@ -27,12 +25,6 @@ export interface PostFormProps {
   setIsScheduled: (isScheduled: boolean) => void;
   scheduleDateTime: string;
   setScheduleDateTime: (dateTime: string) => void;
-  discountCode: string;
-  setDiscountCode: (code: string) => void;
-  validUntil: string;
-  setValidUntil: (date: string) => void;
-  announcementType: string;
-  setAnnouncementType: (type: string) => void;
   selectedPlatforms: string[];
   handlePlatformChange: (platform: string) => void;
 } 
