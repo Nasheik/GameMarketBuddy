@@ -20,7 +20,7 @@ export default function PostCreator() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('drafts');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [showPreviews, setShowPreviews] = useState(true);
+  const [showPreviews, setShowPreviews] = useState(false);
 
   // Mock data for drafts and scheduled posts
   const [drafts, setDrafts] = useState<Post[]>([

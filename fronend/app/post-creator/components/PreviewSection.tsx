@@ -44,7 +44,7 @@ export default function PreviewSection({
 
   return (
     <div className={`absolute right-0 top-0 transition-all duration-300 ${
-      showPreviews ? 'w-[40.33%]' : 'w-[8.33%] h-3/5'
+      showPreviews ? 'w-[40.33%]' : 'w-[8.33%] h-[40%]'
     }`}>
       <div 
         className={`bg-white rounded-lg shadow h-full cursor-pointer hover:bg-gray-50 transition-colors ${
