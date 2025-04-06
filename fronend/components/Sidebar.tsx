@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 import { 
   BarChart3, 
   Mail, 
-  Twitter, 
-  Youtube, 
-  MessageCircle,
+  BookImage, 
+  MessageCircleCode,
+  Blocks,
+  FilePlus,
   Share2,
+  Settings,
   LucideIcon
 } from 'lucide-react';
 
@@ -23,18 +25,18 @@ export default function Sidebar() {
   
   const navigation: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'Steam', href: '/steam', icon: BarChart3 },
-    { name: 'Email Marketing', href: '/email', icon: Mail },
-    { name: 'Twitter', href: '/twitter', icon: Twitter },
-    { name: 'YouTube', href: '/youtube', icon: Youtube },
-    { name: 'TikTok', href: '/tiktok', icon: Share2 },
-    { name: 'Discord', href: '/discord', icon: MessageCircle },
+    { name: 'Store Pages', href: '/store-pages', icon: BookImage },
+    { name: 'Email', href: '/email', icon: Mail },
+    { name: 'Post Creator', href: '/post-creator', icon: FilePlus },
+    { name: 'Socials', href: '/socials', icon: MessageCircleCode },
+    { name: 'Integrations', href: '/integrations', icon: Blocks },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (
     <div className="flex h-full flex-col bg-white w-64 border-r shadow-sm">
       <div className="p-4 border-b">
-        <h2 className="text-xl font-bold">PostScheduler</h2>
+        <h2 className="text-2xl font-bold">[Game Name]</h2>
       </div>
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
@@ -59,6 +61,8 @@ export default function Sidebar() {
         </ul>
       </nav>
       <div className="border-t p-4">
+      <h2 className="text-xl font-bold">[Company Name]</h2>
+
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-gray-200"></div>
           <div>
