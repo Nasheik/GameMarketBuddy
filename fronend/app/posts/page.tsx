@@ -75,6 +75,8 @@ export default function PostsPage() {
         }
       ]);
 
+    console.log('Post created:', e);
+
     if (error) {
       console.error('Error creating post:', error);
       return;

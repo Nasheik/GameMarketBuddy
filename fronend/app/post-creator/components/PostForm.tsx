@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from "@/utils/supabase/client";
 import { PostFormProps } from '../types';
 
 export default function PostForm({
@@ -8,18 +9,59 @@ export default function PostForm({
   content,
   setContent,
   mediaPreview,
+  setMediaPreview,
   mediaType,
+  setMediaType,
   handleMediaChange,
   isScheduled,
   setIsScheduled,
   scheduleDateTime,
   setScheduleDateTime,
   selectedPlatforms,
+  setSelectedPlatforms,
   handlePlatformChange,
 }: PostFormProps) {
+
+  const supabase = createClient();
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !content) return;
+
+    try {
+      const { error } = await supabase
+        .from('scheduled_posts')
+        .insert([
+          {
+            game_id: '00000000-0000-0000-0000-000000001001', // Default game ID
+            content: content,
+            media_url: mediaPreview,
+            scheduled_time: isScheduled ? scheduleDateTime : new Date().toISOString(),
+            status: isScheduled ? 'scheduled' : 'draft'
+          }
+        ]);
+
+      if (error) {
+        console.error('Error creating post:', error);
+        return;
+      }
+
+      // Reset form
+      // setTitle('');
+      // setContent('');
+      // setMediaPreview(null);
+      // setMediaType(null);
+      // setIsScheduled(false);
+      // setScheduleDateTime('');
+      // setSelectedPlatforms([]);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
   return (
-    
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} method="POST" className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Platforms</label>
         <div className="space-x-4">
@@ -61,6 +103,7 @@ export default function PostForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter post title"
+          required
         />
       </div>
 
@@ -129,7 +172,7 @@ export default function PostForm({
           <div className="mt-2">
             <input
               type="datetime-local"
-              className="w-1/4 px-3 py-2 border rounded-md"
+              className="w-400 px-3 py-2 border rounded-md"
               value={scheduleDateTime}
               onChange={(e) => setScheduleDateTime(e.target.value)}
               min={new Date().toISOString().slice(0, 16)}
@@ -141,13 +184,14 @@ export default function PostForm({
         )}
       </div>
 
-      
-
       <div className="flex justify-end">
-        <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500">
+        <button 
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
+        >
           {isScheduled ? 'Schedule Post' : 'Create Draft'}
         </button>
       </div>
-    </div>
+    </form>
   );
 } 

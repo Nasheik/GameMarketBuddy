@@ -19,12 +19,15 @@ export interface PostFormProps {
   content: string;
   setContent: (content: string) => void;
   mediaPreview: string | null;
+  setMediaPreview: (url: string | null) => void;
   mediaType: 'image' | 'video' | null;
+  setMediaType: (type: 'image' | 'video' | null) => void;
   handleMediaChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isScheduled: boolean;
   setIsScheduled: (isScheduled: boolean) => void;
   scheduleDateTime: string;
   setScheduleDateTime: (dateTime: string) => void;
   selectedPlatforms: string[];
+  setSelectedPlatforms: (platforms: string[]) => void;
   handlePlatformChange: (platform: string) => void;
 } 
