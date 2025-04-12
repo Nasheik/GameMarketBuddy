@@ -11,6 +11,7 @@ import {
   FilePlus,
   Share2,
   Settings,
+  Calendar,
   LucideIcon
 } from 'lucide-react';
 
@@ -28,6 +29,7 @@ export default function Sidebar() {
     { name: 'Store Pages', href: '/store-pages', icon: BookImage },
     { name: 'Email', href: '/email', icon: Mail },
     { name: 'Post Creator', href: '/post-creator', icon: FilePlus },
+    { name: 'Post Calendar', href: '/post-calendar', icon: Calendar },
     { name: 'Socials', href: '/socials', icon: MessageCircleCode },
     { name: 'Integrations', href: '/integrations', icon: Blocks },
     { name: 'Settings', href: '/settings', icon: Settings },
