@@ -1,9 +1,41 @@
+'use client';
+
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+
 export default function Settings() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut({ scope: 'local' });
+    router.push('/sign-in');
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <div className="space-y-8">
+        {/* Account Management */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Account Management</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Sign Out</p>
+                <p className="text-sm text-gray-500">Sign out of your account</p>
+              </div>
+              <button 
+                onClick={handleSignOut}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Account Settings */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Account Settings</h2>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useGame } from '@/context/GameContext';
 import { 
   BarChart3, 
   Mail, 
@@ -12,7 +13,10 @@ import {
   Share2,
   Settings,
   Calendar,
-  LucideIcon
+  LucideIcon,
+  HomeIcon,
+  GamepadIcon,
+  CalendarIcon,
 } from 'lucide-react';
 
 interface NavItem {
@@ -23,15 +27,15 @@ interface NavItem {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  
+  const { selectedGame, games, setSelectedGame, isLoading } = useGame();
+
+  const isActive = (path: string) => pathname === path;
+
   const navigation: NavItem[] = [
-    { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'Store Pages', href: '/store-pages', icon: BookImage },
-    { name: 'Email', href: '/email', icon: Mail },
-    { name: 'Post Creator', href: '/post-creator', icon: FilePlus },
+    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+    { name: 'Game Details', href: '/game-details', icon: GamepadIcon },
+    { name: 'Post Week', href: '/post-week', icon: CalendarIcon },
     { name: 'Post Calendar', href: '/post-calendar', icon: Calendar },
-    { name: 'Socials', href: '/socials', icon: MessageCircleCode },
-    { name: 'Integrations', href: '/integrations', icon: Blocks },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -39,17 +43,37 @@ export default function Sidebar() {
     <div className="flex h-full flex-col bg-white w-64 border-r shadow-sm">
       <div className="p-4 border-b">
         <h2 className="text-2xl font-bold">[Game Name]</h2>
+        <select
+          value={selectedGame?.id || ""}
+          onChange={(e) => {
+            const game = games.find((g) => g.id === e.target.value);
+            if (game) setSelectedGame(game);
+          }}
+          className="w-full p-2 border rounded-md"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <option value="">Loading games...</option>
+          ) : games.length === 0 ? (
+            <option value="">No games available</option>
+          ) : (
+            games.map((game) => (
+              <option key={game.id} value={game.id}>
+                {game.title}
+              </option>
+            ))
+          )}
+        </select>
       </div>
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
             return (
               <li key={item.name}>
                 <Link
                   href={item.href}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                    isActive
+                    isActive(item.href)
                       ? 'bg-blue-100 text-blue-600'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
