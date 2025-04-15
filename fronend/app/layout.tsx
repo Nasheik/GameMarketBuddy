@@ -1,10 +1,11 @@
-import { Inter } from 'next/font/google';
-import Sidebar from '@/components/Sidebar';
+import { createClient } from "@/utils/supabase/server";
+import { GameProvider } from "@/context/GameContext";
+import Sidebar from "@/components/Sidebar";
+import { Inter } from "next/font/google";
 import './globals.css';
 import { Metadata } from 'next';
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
-import { GameProvider } from "@/context/GameContext";
+import { Sidebar as SidebarComponent } from "@/components/sidebar";
+import { inter } from "@/utils/fonts";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,16 +19,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return redirect("/sign-in");
-  }
-
   return (
     <html lang="en">
       <body className={inter.className}>
