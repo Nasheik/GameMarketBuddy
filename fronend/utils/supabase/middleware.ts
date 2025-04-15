@@ -56,7 +56,7 @@ export const updateSession = async (request: NextRequest) => {
 
     // Redirect authenticated users from root to protected
     if (request.nextUrl.pathname === "/" && user) {
-      return NextResponse.redirect(new URL("/protected", request.url));
+      // return NextResponse.redirect(new URL("/protected", request.url));
     }
 
     return response;
