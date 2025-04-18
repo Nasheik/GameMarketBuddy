@@ -44,19 +44,41 @@ export const updateSession = async (request: NextRequest) => {
     const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path));
 
     // If user is not authenticated and trying to access protected routes
-    if (!user && !isAuthPath && (request.nextUrl.pathname.startsWith("/protected") || 
-         request.nextUrl.pathname.startsWith("/posts"))) {
+    if (!user && !isAuthPath && (
+      request.nextUrl.pathname.startsWith("/dashboard") || 
+      request.nextUrl.pathname.startsWith("/create-game")
+    )) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
     }
 
     // If user is authenticated and trying to access auth pages
     if (user && isAuthPath) {
-      return NextResponse.redirect(new URL("/protected", request.url));
+      // Check if user has any games
+      const { data: games } = await supabase
+        .from('games')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!games || games.length === 0) {
+        return NextResponse.redirect(new URL("/create-game", request.url));
+      }
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // Redirect authenticated users from root to protected
+    // Redirect authenticated users from root to appropriate page
     if (request.nextUrl.pathname === "/" && user) {
-      // return NextResponse.redirect(new URL("/protected", request.url));
+      // Check if user has any games
+      const { data: games } = await supabase
+        .from('games')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!games || games.length === 0) {
+        return NextResponse.redirect(new URL("/create-game", request.url));
+      }
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return response;
@@ -64,6 +86,7 @@ export const updateSession = async (request: NextRequest) => {
     // If you are here, a Supabase client could not be created!
     // This is likely because you have not set up environment variables.
     // Check out http://localhost:3000 for Next Steps.
+    console.error('Middleware error:', e);
     return NextResponse.next({
       request: {
         headers: request.headers,

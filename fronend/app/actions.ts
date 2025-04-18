@@ -53,7 +53,38 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  return redirect("/protected");
+  // Get the user's session
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    return encodedRedirect("error", "/sign-in", "Session not found");
+  }
+
+  // Check if user has an active subscription
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .eq('status', 'active')
+    .single();
+
+  // If no active subscription, redirect to payment
+  if (!subscription) {
+    return redirect('/payment');
+  }
+
+  // Check if user has any games
+  const { data: games } = await supabase
+    .from('games')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .limit(1);
+
+  if (!games || games.length === 0) {
+    return redirect('/create-game');
+  }
+
+  return redirect('/dashboard');
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {

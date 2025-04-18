@@ -29,7 +29,7 @@ export default async function LandingPage() {
             </Link>
           ) : (
             <Link 
-              href="/auth/login"
+              href="/sign-in"
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg"
             >
               Get Started
