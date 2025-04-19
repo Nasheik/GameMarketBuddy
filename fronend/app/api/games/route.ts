@@ -20,6 +20,11 @@ export async function POST(request: Request) {
     const gameDescription = formData.get('gameDescription') as string;
     const genre = formData.get('genre') as string;
     const releaseStatus = formData.get('releaseStatus') as string;
+    const manualTags = formData.get('manualTags') as string;
+    const targetPlatforms = formData.getAll('targetPlatforms') as string[];
+    const marketingPlatforms = formData.getAll('marketingPlatforms') as string[];
+    const marketingGoals = formData.get('marketingGoals') as string;
+    const toneAndStyle = formData.get('toneAndStyle') as string;
 
     // Validate required fields
     if (!gameName || !gameDescription || !genre || !releaseStatus) {
@@ -34,11 +39,16 @@ export async function POST(request: Request) {
       .from('games')
       .insert([
         {
-          name: gameName,
+          title: gameName,
           description: gameDescription,
           genre,
-          release_status: releaseStatus,
+          development_stage: releaseStatus,
           user_id: session.user.id,
+          manual_tags: manualTags ? manualTags.split(',').map(tag => tag.trim()) : [],
+          target_platforms: targetPlatforms,
+          marketing_platforms: marketingPlatforms,
+          marketing_goals: marketingGoals,
+          tone_and_style: toneAndStyle,
         }
       ])
       .select()

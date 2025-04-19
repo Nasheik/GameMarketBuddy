@@ -8,6 +8,7 @@ interface GameContextType {
   selectedGame: Game | null;
   games: Game[];
   setSelectedGame: (game: Game) => void;
+  updateGame: (gameId: string, updatedGame: Partial<Game>) => void;
   isLoading: boolean;
 }
 
@@ -43,8 +44,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     fetchGames();
   }, []);
 
+  const updateGame = (gameId: string, updatedGame: Partial<Game>) => {
+    setGames(prevGames => 
+      prevGames.map(game => 
+        game.id === gameId ? { ...game, ...updatedGame } : game
+      )
+    );
+    
+    if (selectedGame?.id === gameId) {
+      setSelectedGame(prev => prev ? { ...prev, ...updatedGame } : null);
+    }
+  };
+
   return (
-    <GameContext.Provider value={{ selectedGame, games, setSelectedGame, isLoading }}>
+    <GameContext.Provider value={{ selectedGame, games, setSelectedGame, updateGame, isLoading }}>
       {children}
     </GameContext.Provider>
   );

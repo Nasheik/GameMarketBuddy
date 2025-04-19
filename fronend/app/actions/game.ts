@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
 
 export async function saveGameDetails(formData: FormData, gameId?: string) {
   const supabase = await createClient();
@@ -42,9 +41,9 @@ export async function saveGameDetails(formData: FormData, gameId?: string) {
       if (error) throw error;
     }
 
-    redirect('/dashboard');
+    return { success: true };
   } catch (error) {
     console.error('Error saving game details:', error);
-    throw error;
+    return { success: false, error: error instanceof Error ? error.message : 'An error occurred' };
   }
 } 

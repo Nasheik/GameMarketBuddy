@@ -114,15 +114,69 @@ export default async function CreateGamePage() {
                 <option value="rpg">RPG</option>
                 <option value="strategy">Strategy</option>
                 <option value="simulation">Simulation</option>
-                <option value="sports">Sports</option>
                 <option value="puzzle">Puzzle</option>
-                <option value="other">Other</option>
+                <option value="platformer">Platformer</option>
+                <option value="shooter">Shooter</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="manualTags" className="block text-sm font-medium mb-2">
+                Custom Tags
+              </label>
+              <input
+                type="text"
+                id="manualTags"
+                name="manualTags"
+                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Add custom tags (comma separated)"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="targetPlatforms" className="block text-sm font-medium mb-2">
+                Target Platforms
+              </label>
+              <select
+                id="targetPlatforms"
+                name="targetPlatforms"
+                multiple
+                required
+                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="steam">Steam</option>
+                <option value="itch">itch.io</option>
+                <option value="epic">Epic Games Store</option>
+                <option value="gog">GOG</option>
+                <option value="console">Console</option>
+                <option value="mobile">Mobile</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="marketingPlatforms" className="block text-sm font-medium mb-2">
+                Marketing Platforms
+              </label>
+              <select
+                id="marketingPlatforms"
+                name="marketingPlatforms"
+                multiple
+                required
+                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="twitter">Twitter</option>
+                <option value="reddit">Reddit</option>
+                <option value="instagram">Instagram</option>
+                <option value="tiktok">TikTok</option>
+                <option value="youtube">YouTube</option>
+                <option value="discord">Discord</option>
+                <option value="facebook">Facebook</option>
               </select>
             </div>
 
             <div>
               <label htmlFor="releaseStatus" className="block text-sm font-medium mb-2">
-                Release Status
+                Development Stage
               </label>
               <select
                 id="releaseStatus"
@@ -130,20 +184,57 @@ export default async function CreateGamePage() {
                 required
                 className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select release status</option>
-                <option value="in_development">In Development</option>
-                <option value="early_access">Early Access</option>
-                <option value="released">Released</option>
-                <option value="coming_soon">Coming Soon</option>
+                <option value="">Select development stage</option>
+                <option value="prototype">Prototype</option>
+                <option value="alpha">Alpha</option>
+                <option value="beta">Beta</option>
+                <option value="release">Release</option>
+                <option value="post-launch">Post-launch</option>
               </select>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-            >
-              Create Game Profile
-            </button>
+            <div>
+              <label htmlFor="marketingGoals" className="block text-sm font-medium mb-2">
+                Marketing Goals
+              </label>
+              <input
+                type="text"
+                id="marketingGoals"
+                name="marketingGoals"
+                required
+                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Wishlist growth, Devlog visibility, Community engagement"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="toneAndStyle" className="block text-sm font-medium mb-2">
+                Tone and Style
+              </label>
+              <select
+                id="toneAndStyle"
+                name="toneAndStyle"
+                required
+                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select tone and style</option>
+                <option value="casual">Casual</option>
+                <option value="hype">Hype</option>
+                <option value="devlog">Devlog</option>
+                <option value="inspirational">Inspirational</option>
+                <option value="professional">Professional</option>
+                <option value="humorous">Humorous</option>
+              </select>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-500 transition-colors font-medium"
+              >
+                Create Game Profile
+              </button>
+            </div>
           </form>
         </div>
       </main>

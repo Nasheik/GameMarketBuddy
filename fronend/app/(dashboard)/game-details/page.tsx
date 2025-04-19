@@ -3,10 +3,13 @@
 import { useGame } from '@/context/GameContext';
 import { saveGameDetails } from '@/app/actions/game';
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { Game } from '@/types/game';
 
 export default function GameDetails() {
-  const { selectedGame } = useGame();
+  const { selectedGame, updateGame } = useGame();
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (selectedGame && formRef.current) {
@@ -52,6 +55,39 @@ export default function GameDetails() {
     }
   }, [selectedGame]);
 
+  const handleSubmit = async (formData: FormData) => {
+    if (!selectedGame?.id) {
+      console.error('No game selected');
+      return;
+    }
+
+    try {
+      const result = await saveGameDetails(formData, selectedGame.id);
+      if (result.success) {
+        // Update the game in context with the new data
+        const updatedGame: Partial<Game> = {
+          title: formData.get('gameTitle')?.toString() || '',
+          genre: formData.get('gameGenre')?.toString() || '',
+          manual_tags: formData.get('manualTags') ? (formData.get('manualTags') as string).split(',').map(tag => tag.trim()) : [],
+          description: formData.get('shortDescription')?.toString() || '',
+          target_platforms: Array.from(formData.getAll('targetPlatforms')).map(value => value.toString()),
+          marketing_platforms: Array.from(formData.getAll('marketingPlatforms')).map(value => value.toString()),
+          development_stage: formData.get('developmentStage')?.toString() || '',
+          marketing_goals: formData.get('marketingGoals')?.toString() || '',
+          tone_and_style: formData.get('toneAndStyle')?.toString() || '',
+        };
+        updateGame(selectedGame.id, updatedGame);
+        router.push('/dashboard');
+      } else {
+        console.error('Failed to save game details:', result.error);
+        // You might want to show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
   if (!selectedGame) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -65,7 +101,7 @@ export default function GameDetails() {
       <div className="max-w-4xl mx-auto p-8">
         <h1 className="text-3xl font-bold mb-8">Game Details</h1>
         
-        <form ref={formRef} action={(formData) => saveGameDetails(formData, selectedGame.id)} className="space-y-8">
+        <form ref={formRef} action={handleSubmit} className="space-y-8">
           {/* Game Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Game Title</label>
