@@ -20,6 +20,7 @@ export default function PostWeek() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { selectedGame } = useGame();
   const supabase = createClient();
 
@@ -86,6 +87,18 @@ export default function PostWeek() {
     }
   };
 
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < daysOfWeek.length - 3) {
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
+
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   if (loading) {
@@ -124,46 +137,65 @@ export default function PostWeek() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {daysOfWeek.map((day) => {
-          const post = posts.find(p => p.day === day);
-          return (
-            <Card key={day} className="p-6">
-              <h2 className="text-xl font-semibold mb-4">{day}</h2>
-              {post ? (
-                <>
-                  <div className="mb-4">
-                    <span className="font-medium">Type:</span> {post.postType}
-                  </div>
-                  <div className="mb-4">
-                    <span className="font-medium">Platform:</span> {post.platform}
-                  </div>
-                  <div className="mb-4">
-                    <span className="font-medium">Content:</span>
-                    <p className="mt-2 text-gray-600">{post.content}</p>
-                  </div>
-                  <div className="mb-4">
-                    <span className="font-medium">Hashtags:</span>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {post.hashtags.map((tag, index) => (
-                        <span key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
-                          {tag}
-                        </span>
-                      ))}
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <Button
+            onClick={handlePrevious}
+            disabled={currentIndex === 0}
+            className="bg-gray-200 hover:bg-gray-300"
+          >
+            ← Previous
+          </Button>
+          <Button
+            onClick={handleNext}
+            disabled={currentIndex >= daysOfWeek.length - 3}
+            className="bg-gray-200 hover:bg-gray-300"
+          >
+            Next →
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {daysOfWeek.slice(currentIndex, currentIndex + 3).map((day) => {
+            const post = posts.find(p => p.day === day);
+            return (
+              <Card key={day} className="p-6">
+                <h2 className="text-xl font-semibold mb-4">{day}</h2>
+                {post ? (
+                  <>
+                    <div className="mb-4">
+                      <span className="font-medium">Type:</span> {post.postType}
                     </div>
+                    <div className="mb-4">
+                      <span className="font-medium">Platform:</span> {post.platform}
+                    </div>
+                    <div className="mb-4">
+                      <span className="font-medium">Content:</span>
+                      <p className="mt-2 text-gray-600">{post.content}</p>
+                    </div>
+                    <div className="mb-4">
+                      <span className="font-medium">Hashtags:</span>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {post.hashtags.map((tag, index) => (
+                          <span key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium">Best Time to Post:</span> {post.bestTime}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-500 italic">
+                    No post generated for this day
                   </div>
-                  <div>
-                    <span className="font-medium">Best Time to Post:</span> {post.bestTime}
-                  </div>
-                </>
-              ) : (
-                <div className="text-gray-500 italic">
-                  No post generated for this day
-                </div>
-              )}
-            </Card>
-          );
-        })}
+                )}
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
