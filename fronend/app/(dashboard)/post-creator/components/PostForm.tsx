@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/client";
 import { PostFormProps } from '../types';
+import { useGame } from '@/context/GameContext';
 
 export default function PostForm({
   title,
@@ -21,20 +22,19 @@ export default function PostForm({
   setSelectedPlatforms,
   handlePlatformChange,
 }: PostFormProps) {
-
+  const { selectedGame } = useGame();
   const supabase = createClient();
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content) return;
+    if (!title || !content || !selectedGame?.id) return;
 
     try {
       const { error } = await supabase
         .from('scheduled_posts')
         .insert([
           {
-            game_id: '00000000-0000-0000-0000-000000001001', // Default game ID
+            game_id: selectedGame.id,
             content: content,
             media_url: mediaPreview,
             scheduled_time: isScheduled ? scheduleDateTime : new Date().toISOString(),
@@ -48,13 +48,13 @@ export default function PostForm({
       }
 
       // Reset form
-      // setTitle('');
-      // setContent('');
-      // setMediaPreview(null);
-      // setMediaType(null);
-      // setIsScheduled(false);
-      // setScheduleDateTime('');
-      // setSelectedPlatforms([]);
+      setTitle('');
+      setContent('');
+      setMediaPreview(null);
+      setMediaType(null);
+      setIsScheduled(false);
+      setScheduleDateTime('');
+      setSelectedPlatforms([]);
     } catch (error) {
       console.error('Error submitting form:', error);
     }
