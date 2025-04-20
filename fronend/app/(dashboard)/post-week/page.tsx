@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Post {
   day: string;
@@ -22,6 +23,8 @@ interface Post {
   content: string;
   hashtags: string[];
   bestTime: string;
+  imageUrl?: string;
+  isScheduled?: boolean;
 }
 
 export default function PostWeek() {
@@ -33,6 +36,8 @@ export default function PostWeek() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { selectedGame } = useGame();
   const supabase = createClient();
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
 
   useEffect(() => {
     if (selectedGame) {
@@ -60,7 +65,8 @@ export default function PostWeek() {
           platform: post.platform,
           content: post.content,
           hashtags: post.hashtags,
-          bestTime: post.best_time
+          bestTime: post.best_time,
+          isScheduled: post.is_scheduled
         }));
         setPosts(formattedPosts);
       }
@@ -146,6 +152,70 @@ export default function PostWeek() {
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error saving post:', error);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !selectedPost || !selectedGame) return;
+    
+    setUploadingImage(true);
+    try {
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${selectedGame.id}-${selectedPost.day}-${Date.now()}.${fileExt}`;
+      const filePath = `post-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('post-images')
+        .getPublicUrl(filePath);
+
+      setSelectedPost({ ...selectedPost, imageUrl: publicUrl });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    if (!selectedPost) return;
+    setSelectedPost({ ...selectedPost, imageUrl: undefined });
+  };
+
+  const handleSchedule = async () => {
+    if (!selectedPost || !selectedGame) return;
+
+    setScheduling(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('saved_posts')
+        .update({
+          is_scheduled: true
+        })
+        .eq('game_id', selectedGame.id)
+        .eq('day_of_week', selectedPost.day);
+
+      if (error) throw error;
+
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.day === selectedPost.day ? { ...selectedPost, isScheduled: true } : post
+        )
+      );
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error scheduling post:', error);
+    } finally {
+      setScheduling(false);
     }
   };
 
@@ -253,81 +323,186 @@ export default function PostWeek() {
       </div>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-white dark:bg-gray-800">
+        <DialogContent className="max-w-4xl bg-white dark:bg-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Edit Post for {selectedPost?.day}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">Edit Post for {selectedPost?.day}</DialogTitle>
           </DialogHeader>
           {selectedPost && (
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="postType" className="text-right font-medium text-gray-700 dark:text-gray-300">
-                  Type
-                </Label>
-                <Input
-                  id="postType"
-                  value={selectedPost.postType}
-                  onChange={(e) => setSelectedPost({...selectedPost, postType: e.target.value})}
-                  className="col-span-3 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
+            <div className="grid grid-cols-2 gap-8 py-6">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="postType" className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Post Type
+                  </Label>
+                  <Input
+                    id="postType"
+                    value={selectedPost.postType}
+                    onChange={(e) => setSelectedPost({...selectedPost, postType: e.target.value})}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="platform" className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Platform
+                  </Label>
+                  <Input
+                    id="platform"
+                    value={selectedPost.platform}
+                    onChange={(e) => setSelectedPost({...selectedPost, platform: e.target.value})}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="content" className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Content
+                  </Label>
+                  <Textarea
+                    id="content"
+                    value={selectedPost.content}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSelectedPost({...selectedPost, content: e.target.value})}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white min-h-[120px]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="hashtags" className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Hashtags
+                  </Label>
+                  <Input
+                    id="hashtags"
+                    value={selectedPost.hashtags.join(', ')}
+                    onChange={(e) => setSelectedPost({...selectedPost, hashtags: e.target.value.split(',').map(tag => tag.trim())})}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                    placeholder="Enter hashtags separated by commas"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bestTime" className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Best Time to Post
+                  </Label>
+                  <Input
+                    id="bestTime"
+                    value={selectedPost.bestTime}
+                    onChange={(e) => setSelectedPost({...selectedPost, bestTime: e.target.value})}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSchedule}
+                      disabled={scheduling || selectedPost.isScheduled}
+                      className={`${
+                        selectedPost.isScheduled 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      {scheduling ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Scheduling...
+                        </>
+                      ) : selectedPost.isScheduled ? (
+                        'Scheduled ✓'
+                      ) : (
+                        'Schedule'
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsEditModalOpen(false)}
+                      className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSavePost}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="platform" className="text-right font-medium text-gray-700 dark:text-gray-300">
-                  Platform
-                </Label>
-                <Input
-                  id="platform"
-                  value={selectedPost.platform}
-                  onChange={(e) => setSelectedPost({...selectedPost, platform: e.target.value})}
-                  className="col-span-3 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="content" className="text-right font-medium text-gray-700 dark:text-gray-300">
-                  Content
-                </Label>
-                <Input
-                  id="content"
-                  value={selectedPost.content}
-                  onChange={(e) => setSelectedPost({...selectedPost, content: e.target.value})}
-                  className="col-span-3 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="hashtags" className="text-right font-medium text-gray-700 dark:text-gray-300">
-                  Hashtags
-                </Label>
-                <Input
-                  id="hashtags"
-                  value={selectedPost.hashtags.join(', ')}
-                  onChange={(e) => setSelectedPost({...selectedPost, hashtags: e.target.value.split(',').map(tag => tag.trim())})}
-                  className="col-span-3 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="bestTime" className="text-right font-medium text-gray-700 dark:text-gray-300">
-                  Best Time
-                </Label>
-                <Input
-                  id="bestTime"
-                  value={selectedPost.bestTime}
-                  onChange={(e) => setSelectedPost({...selectedPost, bestTime: e.target.value})}
-                  className="col-span-3 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSavePost}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Save Changes
-                </Button>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Post Image
+                  </Label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                    {selectedPost.imageUrl ? (
+                      <div className="relative">
+                        <img 
+                          src={selectedPost.imageUrl} 
+                          alt="Post preview" 
+                          className="w-full h-64 object-cover rounded-lg"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-64">
+                        <Upload className="h-12 w-12 text-gray-400 mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">
+                          Drag and drop an image here, or click to select
+                        </p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                          disabled={uploadingImage}
+                        >
+                          {uploadingImage ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            'Select Image'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Recommended Media
+                  </Label>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Suggested images/videos for this post:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                        <li>Gameplay screenshot showing [specific feature]</li>
+                        <li>Character close-up with [specific emotion]</li>
+                        <li>Action sequence from [specific level]</li>
+                        <li>Behind-the-scenes development clip</li>
+                        <li>Community highlight reel</li>
+                      </ul>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        Tip: Use high-quality images (1920x1080) and keep videos under 60 seconds for best engagement.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -1,0 +1,3 @@
+Strip CLI:
+
+stripe listen --events customer.subscription.updated  --forward-to localhost:3000/api/webhooks/stripe
