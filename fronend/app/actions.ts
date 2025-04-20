@@ -4,6 +4,11 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-03-31.basil",
+});
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -19,7 +24,7 @@ export const signUpAction = async (formData: FormData) => {
     );
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { error, data } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -30,13 +35,36 @@ export const signUpAction = async (formData: FormData) => {
   if (error) {
     console.error(error.code + " " + error.message);
     return encodedRedirect("error", "/sign-up", error.message);
-  } else {
-    return encodedRedirect(
-      "success",
-      "/sign-up",
-      "Thanks for signing up! Please check your email for a verification link.",
-    );
   }
+
+  // Create Stripe customer for the new user
+  if (data.user) {
+    try {
+      const customer = await stripe.customers.create({
+        email: email,
+        metadata: {
+          userId: data.user.id
+        }
+      });
+
+      // Update the user record with the Stripe customer ID
+      await supabase
+        .from('users')
+        .update({ stripe_customer_id: customer.id })
+        .eq('id', data.user.id);
+
+    } catch (stripeError) {
+      console.error("Error creating Stripe customer:", stripeError);
+      // Don't fail the signup if Stripe customer creation fails
+      // The user can retry later when they go to make a payment
+    }
+  }
+
+  return encodedRedirect(
+    "success",
+    "/sign-up",
+    "Thanks for signing up! Please check your email for a verification link.",
+  );
 };
 
 export const signInAction = async (formData: FormData) => {

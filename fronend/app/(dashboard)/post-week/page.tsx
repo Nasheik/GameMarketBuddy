@@ -24,7 +24,7 @@ interface Post {
   hashtags: string[];
   bestTime: string;
   imageUrl?: string;
-  isScheduled?: boolean;
+  status?: 'draft' | 'scheduled' | 'published' | 'failed';
 }
 
 export default function PostWeek() {
@@ -66,7 +66,8 @@ export default function PostWeek() {
           content: post.content,
           hashtags: post.hashtags,
           bestTime: post.best_time,
-          isScheduled: post.is_scheduled
+          status: post.status,
+          imageUrl: post.media_url
         }));
         setPosts(formattedPosts);
       }
@@ -196,24 +197,41 @@ export default function PostWeek() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+
+      const today = new Date();
+      const scheduledTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()+3);
+
+      const newStatus = selectedPost.status === 'scheduled' ? 'draft' : 'scheduled';
+      
+      // Only set time_to_post if we're scheduling the post
+      const updateData = {
+        status: newStatus,
+        ...(newStatus === 'scheduled' ? {
+          time_to_post: scheduledTime.toISOString(), // You might want to use the bestTime here
+          media_url: selectedPost.imageUrl,
+          media_type: selectedPost.imageUrl ? 'image' : null
+        } : {})
+      };
+      console.log("hello");
+
       const { error } = await supabase
         .from('saved_posts')
-        .update({
-          is_scheduled: true
-        })
+        .update(updateData)
         .eq('game_id', selectedGame.id)
         .eq('day_of_week', selectedPost.day);
+
+      console.log("hello");
 
       if (error) throw error;
 
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post.day === selectedPost.day ? { ...selectedPost, isScheduled: true } : post
+          post.day === selectedPost.day ? { ...selectedPost, status: newStatus } : post
         )
       );
-      setIsEditModalOpen(false);
+      setSelectedPost({ ...selectedPost, status: newStatus });
     } catch (error) {
-      console.error('Error scheduling post:', error);
+      console.log('Error updating post status:', error);
     } finally {
       setScheduling(false);
     }
@@ -281,7 +299,9 @@ export default function PostWeek() {
             return (
               <Card 
                 key={day} 
-                className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
+                  post?.status === 'scheduled' ? 'border-green-500' : ''
+                }`}
                 onClick={() => handlePostClick(day)}
               >
                 <h2 className="text-xl font-semibold mb-4">{day}</h2>
@@ -307,9 +327,14 @@ export default function PostWeek() {
                         ))}
                       </div>
                     </div>
-                    <div>
+                    <div className="mb-4">
                       <span className="font-medium">Best Time to Post:</span> {post.bestTime}
                     </div>
+                    {post.status === 'scheduled' && (
+                      <div className="text-green-600 font-medium">
+                        Scheduled for {post.bestTime}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-gray-500 italic">
@@ -392,9 +417,9 @@ export default function PostWeek() {
                   <div className="flex gap-2">
                     <Button
                       onClick={handleSchedule}
-                      disabled={scheduling || selectedPost.isScheduled}
+                      disabled={scheduling}
                       className={`${
-                        selectedPost.isScheduled 
+                        selectedPost?.status === 'scheduled' 
                           ? 'bg-green-600 hover:bg-green-700 text-white' 
                           : 'bg-blue-600 hover:bg-blue-700 text-white'
                       }`}
@@ -402,12 +427,12 @@ export default function PostWeek() {
                       {scheduling ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Scheduling...
+                          {selectedPost?.status === 'scheduled' ? 'Unscheduling...' : 'Scheduling...'}
                         </>
-                      ) : selectedPost.isScheduled ? (
-                        'Scheduled ✓'
+                      ) : selectedPost?.status === 'scheduled' ? (
+                        'Unschedule Post'
                       ) : (
-                        'Schedule'
+                        'Schedule Post'
                       )}
                     </Button>
                     <Button 
