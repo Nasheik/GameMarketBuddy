@@ -26,7 +26,7 @@ interface Post {
   scheduledTime?: string;  // User's selected time in local format
   timeToPost?: string;     // UTC time from database
   imageUrl?: string;
-  status?: 'draft' | 'scheduled' | 'published' | 'failed';
+  status?: 'draft' | 'scheduled' | 'published' | 'failed' | 'posted';
 }
 
 export default function PostWeek() {
@@ -40,6 +40,28 @@ export default function PostWeek() {
   const supabase = createClient();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [scheduling, setScheduling] = useState(false);
+
+  // Function to get dates for the current week
+  const getWeekDates = () => {
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDay + 1); // Start from Monday
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      weekDates.push({
+        day: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][i],
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        fullDate: date.toISOString().split('T')[0]
+      });
+    }
+    return weekDates;
+  };
+
+  const weekDates = getWeekDates();
 
   useEffect(() => {
     if (selectedGame) {
@@ -130,7 +152,7 @@ export default function PostWeek() {
   };
 
   const handleNext = () => {
-    if (currentIndex < daysOfWeek.length - 3) {
+    if (currentIndex < weekDates.length - 3) {
       setCurrentIndex(prev => prev + 1);
     }
   };
@@ -273,8 +295,6 @@ export default function PostWeek() {
     }
   };
 
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -292,8 +312,8 @@ export default function PostWeek() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="container mx-auto px-4 py-4 h-[calc(100vh-64px)] flex flex-col">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">Post Week</h1>
         <Button 
           onClick={handleGenerate} 
@@ -311,8 +331,8 @@ export default function PostWeek() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
+      <div className="flex flex-col flex-grow">
+        <div className="flex justify-between items-center mb-4">
           <Button
             onClick={handlePrevious}
             disabled={currentIndex === 0}
@@ -320,64 +340,73 @@ export default function PostWeek() {
           >
             ← Previous
           </Button>
+          <div className="text-gray-600 dark:text-gray-300 font-medium">
+            ({weekDates[currentIndex]?.date} - {weekDates[currentIndex + 2]?.date})
+          </div>
           <Button
             onClick={handleNext}
-            disabled={currentIndex >= daysOfWeek.length - 3}
+            disabled={currentIndex >= weekDates.length - 3}
             className="bg-gray-200 hover:bg-gray-300"
           >
             Next →
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {daysOfWeek.slice(currentIndex, currentIndex + 3).map((day) => {
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-grow">
+          {weekDates.slice(currentIndex, currentIndex + 3).map(({ day, date, fullDate }, index) => {
             const post = posts.find(p => p.day === day);
             return (
-              <Card 
-                key={day} 
-                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
-                  post?.status === 'scheduled' ? 'border-green-500' : ''
-                }`}
-                onClick={() => handlePostClick(day)}
-              >
-                <h2 className="text-xl font-semibold mb-4">{day}</h2>
-                {post ? (
-                  <>
-                    <div className="mb-4">
-                      <span className="font-medium">Type:</span> {post.postType}
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-medium">Platform:</span> {post.platform}
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-medium">Content:</span>
-                      <p className="mt-2 text-gray-600">{post.content}</p>
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-medium">Hashtags:</span>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {post.hashtags.map((tag, index) => (
-                          <span key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-medium">Best Time to Post:</span> {post.bestTime}
-                    </div>
-                    {post.status === 'scheduled' && (
-                      <div className="text-green-600 font-medium">
-                        Scheduled for {post.scheduledTime}
+              <div key={day} className={`flex flex-col relative h-full ${index < 2 ? 'after:content-[""] after:absolute after:right-[-12px] after:top-0 after:h-full after:w-[2px] after:bg-gray-300 dark:after:bg-gray-600' : ''}`}>
+                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-t-lg">
+                  <h2 className="text-xl font-semibold">{day}</h2>
+                  <p className="text-gray-500">{date}</p>
+                </div>
+                <div className="flex-grow">
+                  <Card 
+                    className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
+                      post?.status === 'scheduled' ? 'border-green-500' : ''
+                    }`}
+                    onClick={() => handlePostClick(day)}
+                  >
+                    {post ? (
+                      <>
+                        <div className="mb-4">
+                          <span className="font-medium">Type:</span> {post.postType}
+                        </div>
+                        <div className="mb-4">
+                          <span className="font-medium">Platform:</span> {post.platform}
+                        </div>
+                        <div className="mb-4">
+                          <span className="font-medium">Content:</span>
+                          <p className="mt-2 text-gray-600">{post.content}</p>
+                        </div>
+                        <div className="mb-4">
+                          <span className="font-medium">Hashtags:</span>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {post.hashtags.map((tag, index) => (
+                              <span key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="mb-4">
+                          <span className="font-medium">Best Time to Post:</span> {post.bestTime}
+                        </div>
+                        {post.status === 'scheduled' && (
+                          <div className="text-green-600 font-medium">
+                            Scheduled for {post.scheduledTime}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-gray-500 italic">
+                        No post generated for this day
                       </div>
                     )}
-                  </>
-                ) : (
-                  <div className="text-gray-500 italic">
-                    No post generated for this day
-                  </div>
-                )}
-              </Card>
+                  </Card>
+                </div>
+              </div>
             );
           })}
         </div>
@@ -469,10 +498,14 @@ export default function PostWeek() {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleSchedule}
-                    disabled={scheduling}
+                    disabled={scheduling || selectedPost?.status === 'published'}
                     className={`${
                       selectedPost?.status === 'scheduled' 
                         ? 'bg-green-600 hover:bg-green-700 text-white' 
+                        : selectedPost?.status === 'published'
+                        ? 'bg-gray-600 text-white cursor-not-allowed'
+                        : selectedPost?.status === 'failed'
+                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
                   >
@@ -483,23 +516,31 @@ export default function PostWeek() {
                       </>
                     ) : selectedPost?.status === 'scheduled' ? (
                       'Unschedule Post'
+                    ) : selectedPost?.status === 'published' ? (
+                      'Published'
+                    ) : selectedPost?.status === 'failed' ? (
+                      'Reschedule'
                     ) : (
                       'Schedule Post'
                     )}
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleSavePost}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Save Changes
-                  </Button>
+                  {selectedPost?.status !== 'published' && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditModalOpen(false)}
+                        className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSavePost}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Save Changes
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
