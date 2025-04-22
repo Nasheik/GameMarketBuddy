@@ -45,10 +45,13 @@ app.post('/enqueue', async (req, res) => {
   // if(post.status !== 'scheduled') {
   //   return res.status(400).send('Post is not scheduled');
   // }
+  // console.log((post.time_to_post))
+  // console.log((post.time_to_post).getTime())
+  // console.log(new Date(post.time_to_post).getTime())+().getTime())
 
-  const delayMs = post.schedule_time ? new Date(post.schedule_time).getTime() - Date.now() : 0;
+  const delayMs = post.time_to_post ? new Date(post.time_to_post) - Date.now() : 0;
   if (delayMs < 0) {
-    console.log('Scheduled time is in the past:', post.schedule_time);
+    console.log('Scheduled time is in the past:', post.time_to_post);
     return res.status(400).send('Scheduled time is in the past');
   }
 

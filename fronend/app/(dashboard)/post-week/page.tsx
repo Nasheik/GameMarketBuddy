@@ -22,7 +22,9 @@ interface Post {
   platform: string;
   content: string;
   hashtags: string[];
-  bestTime: string;
+  bestTime: string;  // GPT's recommended time
+  scheduledTime?: string;  // User's selected time in local format
+  timeToPost?: string;     // UTC time from database
   imageUrl?: string;
   status?: 'draft' | 'scheduled' | 'published' | 'failed';
 }
@@ -59,16 +61,33 @@ export default function PostWeek() {
         .order('day_of_week');
 
       if (savedPosts) {
-        const formattedPosts = savedPosts.map(post => ({
-          day: post.day_of_week,
-          postType: post.post_type,
-          platform: post.platform,
-          content: post.content,
-          hashtags: post.hashtags,
-          bestTime: post.best_time,
-          status: post.status,
-          imageUrl: post.media_url
-        }));
+        const formattedPosts = savedPosts.map(post => {
+          // Convert UTC time to local time for the datetime-local input
+          let localTime;
+          if (post.time_to_post) {
+            const utcDate = new Date(post.time_to_post);
+            // Get the local time components
+            const year = utcDate.getFullYear();
+            const month = String(utcDate.getMonth() + 1).padStart(2, '0');
+            const day = String(utcDate.getDate()).padStart(2, '0');
+            const hours = String(utcDate.getHours()).padStart(2, '0');
+            const minutes = String(utcDate.getMinutes()).padStart(2, '0');
+            // Format as YYYY-MM-DDTHH:MM for datetime-local input
+            localTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+          }
+          
+          return {
+            day: post.day_of_week,
+            postType: post.post_type,
+            platform: post.platform,
+            content: post.content,
+            hashtags: post.hashtags,
+            bestTime: post.best_time,
+            scheduledTime: localTime,
+            status: post.status,
+            imageUrl: post.media_url
+          };
+        });
         setPosts(formattedPosts);
       }
     } catch (error) {
@@ -138,7 +157,10 @@ export default function PostWeek() {
           platform: selectedPost.platform,
           content: selectedPost.content,
           hashtags: selectedPost.hashtags,
-          best_time: selectedPost.bestTime
+          best_time: selectedPost.bestTime,
+          time_to_post: new Date(selectedPost.scheduledTime || '').toISOString(),
+          media_url: selectedPost.imageUrl,
+          media_type: selectedPost.imageUrl ? 'image' : null
         })
         .eq('game_id', selectedGame.id)
         .eq('day_of_week', selectedPost.day);
@@ -192,35 +214,49 @@ export default function PostWeek() {
   const handleSchedule = async () => {
     if (!selectedPost || !selectedGame) return;
 
+    // Validate scheduled time is at least 5 minutes in the future
+    if (selectedPost.scheduledTime) {
+      const scheduledTime = new Date(selectedPost.scheduledTime);
+      const now = new Date();
+      const oneMinuteFromNow = new Date(now.getTime() + 1 * 60000); // Add 5 minutes
+
+      if (scheduledTime < oneMinuteFromNow) {
+        alert('Scheduled time must be at least 1 minutes in the future');
+        return;
+      }
+    }
+
     setScheduling(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-
-      const today = new Date();
-      const scheduledTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()+3);
-
       const newStatus = selectedPost.status === 'scheduled' ? 'draft' : 'scheduled';
       
-      // Only set time_to_post if we're scheduling the post
+      // Convert local datetime to UTC before saving
+      const localDateTime = selectedPost.scheduledTime ? new Date(selectedPost.scheduledTime) : null;
+      const utcDateTime = localDateTime ? localDateTime.toISOString() : null;
+      
+      // Update both post content and scheduling status in a single operation
       const updateData = {
+        post_type: selectedPost.postType,
+        platform: selectedPost.platform,
+        content: selectedPost.content,
+        hashtags: selectedPost.hashtags,
+        best_time: selectedPost.bestTime,
         status: newStatus,
         ...(newStatus === 'scheduled' ? {
-          time_to_post: scheduledTime.toISOString(), // You might want to use the bestTime here
+          time_to_post: utcDateTime,
           media_url: selectedPost.imageUrl,
           media_type: selectedPost.imageUrl ? 'image' : null
         } : {})
       };
-      console.log("hello");
 
       const { error } = await supabase
         .from('saved_posts')
         .update(updateData)
         .eq('game_id', selectedGame.id)
         .eq('day_of_week', selectedPost.day);
-
-      console.log("hello");
 
       if (error) throw error;
 
@@ -231,7 +267,7 @@ export default function PostWeek() {
       );
       setSelectedPost({ ...selectedPost, status: newStatus });
     } catch (error) {
-      console.log('Error updating post status:', error);
+      console.error('Error updating post status:', error);
     } finally {
       setScheduling(false);
     }
@@ -332,7 +368,7 @@ export default function PostWeek() {
                     </div>
                     {post.status === 'scheduled' && (
                       <div className="text-green-600 font-medium">
-                        Scheduled for {post.bestTime}
+                        Scheduled for {post.scheduledTime}
                       </div>
                     )}
                   </>
@@ -406,49 +442,64 @@ export default function PostWeek() {
 
                 <div className="space-y-2">
                   <Label htmlFor="bestTime" className="text-base font-medium text-gray-700 dark:text-gray-300">
-                    Best Time to Post
+                    Recommended Time
                   </Label>
                   <Input
                     id="bestTime"
                     value={selectedPost.bestTime}
-                    onChange={(e) => setSelectedPost({...selectedPost, bestTime: e.target.value})}
+                    disabled
+                    className="bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledTime" className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Scheduled Time
+                  </Label>
+                  <Input
+                    id="scheduledTime"
+                    type="datetime-local"
+                    value={selectedPost.scheduledTime || ''}
+                    onChange={(e) => setSelectedPost({...selectedPost, scheduledTime: e.target.value})}
+                    min={new Date(Date.now() + 1 * 60000).toISOString().slice(0, 16)}
                     className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSchedule}
-                      disabled={scheduling}
-                      className={`${
-                        selectedPost?.status === 'scheduled' 
-                          ? 'bg-green-600 hover:bg-green-700 text-white' 
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      }`}
-                    >
-                      {scheduling ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {selectedPost?.status === 'scheduled' ? 'Unscheduling...' : 'Scheduling...'}
-                        </>
-                      ) : selectedPost?.status === 'scheduled' ? (
-                        'Unschedule Post'
-                      ) : (
-                        'Schedule Post'
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsEditModalOpen(false)}
-                      className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSavePost}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Save Changes
-                    </Button>
-                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSchedule}
+                    disabled={scheduling}
+                    className={`${
+                      selectedPost?.status === 'scheduled' 
+                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    {scheduling ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {selectedPost?.status === 'scheduled' ? 'Unscheduling...' : 'Scheduling...'}
+                      </>
+                    ) : selectedPost?.status === 'scheduled' ? (
+                      'Unschedule Post'
+                    ) : (
+                      'Schedule Post'
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSavePost}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Save Changes
+                  </Button>
                 </div>
               </div>
 
