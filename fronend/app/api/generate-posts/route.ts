@@ -15,7 +15,7 @@ interface GeneratedPost {
 }
 
 interface SavedPost extends GeneratedPost {
-  day: string;
+  timeToPost: string;
 }
 
 // Validation function to ensure the response matches our schema
@@ -111,17 +111,27 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
     // Save each post to the database
     const savedPosts: SavedPost[] = [];
     for (const [day, post] of Object.entries(posts)) {
+      // Calculate the date for this day of the week
+      const today = new Date();
+      const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+      const targetDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(day);
+      const daysToAdd = (targetDay - currentDay + 7) % 7;
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + daysToAdd);
+      
+      // Set the time to 12:00 PM UTC
+      targetDate.setHours(12, 0, 0, 0);
+      
       const { error } = await supabase
         .from('saved_posts')
         .insert({
           user_id: user.id,
           game_id: game.id,
-          day_of_week: day,
           post_type: post.postType,
           platform: post.platform,
           content: post.content,
           hashtags: post.hashtags,
-          best_time: post.bestTime,
+          time_to_post: targetDate.toISOString(),
           created_at: new Date().toISOString()
         });
 
@@ -131,7 +141,7 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
       }
 
       savedPosts.push({
-        day,
+        timeToPost: targetDate.toISOString(),
         ...post
       });
     }

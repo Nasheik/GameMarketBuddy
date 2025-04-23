@@ -17,12 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Post {
-  day: string;
   postType: string;
   platform: string;
   content: string;
   hashtags: string[];
-  bestTime: string;  // GPT's recommended time
   scheduledTime?: string;  // User's selected time in local format
   timeToPost?: string;     // UTC time from database
   imageUrl?: string;
@@ -44,16 +42,14 @@ export default function PostWeek() {
   // Function to get dates for the current week
   const getWeekDates = () => {
     const today = new Date();
-    const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - currentDay + 1); // Start from Monday
-    
     const weekDates = [];
+    
+    // Start from today and get the next 7 days
     for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
       weekDates.push({
-        day: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][i],
+        day: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()],
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         fullDate: date.toISOString().split('T')[0]
       });
@@ -80,32 +76,28 @@ export default function PostWeek() {
         .from('saved_posts')
         .select('*')
         .eq('game_id', selectedGame.id)
-        .order('day_of_week');
+        .order('time_to_post');
 
       if (savedPosts) {
         const formattedPosts = savedPosts.map(post => {
-          // Convert UTC time to local time for the datetime-local input
+          // Convert UTC time to local time for the time input
           let localTime;
           if (post.time_to_post) {
             const utcDate = new Date(post.time_to_post);
             // Get the local time components
-            const year = utcDate.getFullYear();
-            const month = String(utcDate.getMonth() + 1).padStart(2, '0');
-            const day = String(utcDate.getDate()).padStart(2, '0');
             const hours = String(utcDate.getHours()).padStart(2, '0');
             const minutes = String(utcDate.getMinutes()).padStart(2, '0');
-            // Format as YYYY-MM-DDTHH:MM for datetime-local input
-            localTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            // Format as HH:MM for time input
+            localTime = `${hours}:${minutes}`;
           }
           
           return {
-            day: post.day_of_week,
             postType: post.post_type,
             platform: post.platform,
             content: post.content,
             hashtags: post.hashtags,
-            bestTime: post.best_time,
             scheduledTime: localTime,
+            timeToPost: post.time_to_post,
             status: post.status,
             imageUrl: post.media_url
           };
@@ -157,8 +149,12 @@ export default function PostWeek() {
     }
   };
 
-  const handlePostClick = (day: string) => {
-    const post = posts.find(p => p.day === day);
+  const handlePostClick = (date: string) => {
+    const post = posts.find(p => {
+      if (!p.timeToPost) return false;
+      const postDate = new Date(p.timeToPost).toISOString().split('T')[0];
+      return postDate === date;
+    });
     if (post) {
       setSelectedPost(post);
       setIsEditModalOpen(true);
@@ -179,19 +175,18 @@ export default function PostWeek() {
           platform: selectedPost.platform,
           content: selectedPost.content,
           hashtags: selectedPost.hashtags,
-          best_time: selectedPost.bestTime,
           time_to_post: new Date(selectedPost.scheduledTime || '').toISOString(),
           media_url: selectedPost.imageUrl,
           media_type: selectedPost.imageUrl ? 'image' : null
         })
         .eq('game_id', selectedGame.id)
-        .eq('day_of_week', selectedPost.day);
+        .eq('time_to_post', selectedPost.timeToPost);
 
       if (error) throw error;
 
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post.day === selectedPost.day ? selectedPost : post
+          post.timeToPost === selectedPost.timeToPost ? selectedPost : post
         )
       );
       setIsEditModalOpen(false);
@@ -207,7 +202,7 @@ export default function PostWeek() {
     try {
       const file = e.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${selectedGame.id}-${selectedPost.day}-${Date.now()}.${fileExt}`;
+      const fileName = `${selectedGame.id}-${selectedPost.timeToPost}-${Date.now()}.${fileExt}`;
       const filePath = `post-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -238,9 +233,11 @@ export default function PostWeek() {
 
     // Validate scheduled time is at least 5 minutes in the future
     if (selectedPost.scheduledTime) {
-      const scheduledTime = new Date(selectedPost.scheduledTime);
+      const [hours, minutes] = selectedPost.scheduledTime.split(':').map(Number);
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
       const now = new Date();
-      const oneMinuteFromNow = new Date(now.getTime() + 1 * 60000); // Add 5 minutes
+      const oneMinuteFromNow = new Date(now.getTime() + 1 * 60000); // Add 1 minute
 
       if (scheduledTime < oneMinuteFromNow) {
         alert('Scheduled time must be at least 1 minutes in the future');
@@ -255,9 +252,14 @@ export default function PostWeek() {
 
       const newStatus = selectedPost.status === 'scheduled' ? 'draft' : 'scheduled';
       
-      // Convert local datetime to UTC before saving
-      const localDateTime = selectedPost.scheduledTime ? new Date(selectedPost.scheduledTime) : null;
-      const utcDateTime = localDateTime ? localDateTime.toISOString() : null;
+      // Convert local time to UTC before saving
+      let utcDateTime = null;
+      if (selectedPost.scheduledTime) {
+        const [hours, minutes] = selectedPost.scheduledTime.split(':').map(Number);
+        const localDateTime = new Date();
+        localDateTime.setHours(hours, minutes, 0, 0);
+        utcDateTime = localDateTime.toISOString();
+      }
       
       // Update both post content and scheduling status in a single operation
       const updateData = {
@@ -265,7 +267,6 @@ export default function PostWeek() {
         platform: selectedPost.platform,
         content: selectedPost.content,
         hashtags: selectedPost.hashtags,
-        best_time: selectedPost.bestTime,
         status: newStatus,
         ...(newStatus === 'scheduled' ? {
           time_to_post: utcDateTime,
@@ -278,13 +279,13 @@ export default function PostWeek() {
         .from('saved_posts')
         .update(updateData)
         .eq('game_id', selectedGame.id)
-        .eq('day_of_week', selectedPost.day);
+        .eq('time_to_post', selectedPost.timeToPost);
 
       if (error) throw error;
 
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post.day === selectedPost.day ? { ...selectedPost, status: newStatus } : post
+          post.timeToPost === selectedPost.timeToPost ? { ...selectedPost, status: newStatus } : post
         )
       );
       setSelectedPost({ ...selectedPost, status: newStatus });
@@ -332,7 +333,7 @@ export default function PostWeek() {
       </div>
 
       <div className="flex flex-col flex-grow">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-center mr-40 items-center mb-4 gap-10">
           <Button
             onClick={handlePrevious}
             disabled={currentIndex === 0}
@@ -341,7 +342,7 @@ export default function PostWeek() {
             ← Previous
           </Button>
           <div className="text-gray-600 dark:text-gray-300 font-medium">
-            ({weekDates[currentIndex]?.date} - {weekDates[currentIndex + 2]?.date})
+            Showing: {weekDates[currentIndex]?.date} - {weekDates[currentIndex + 2]?.date}
           </div>
           <Button
             onClick={handleNext}
@@ -354,9 +355,13 @@ export default function PostWeek() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-grow">
           {weekDates.slice(currentIndex, currentIndex + 3).map(({ day, date, fullDate }, index) => {
-            const post = posts.find(p => p.day === day);
+            const post = posts.find(p => {
+              if (!p.timeToPost) return false;
+              const postDate = new Date(p.timeToPost).toISOString().split('T')[0];
+              return postDate === fullDate;
+            });
             return (
-              <div key={day} className={`flex flex-col relative h-full ${index < 2 ? 'after:content-[""] after:absolute after:right-[-12px] after:top-0 after:h-full after:w-[2px] after:bg-gray-300 dark:after:bg-gray-600' : ''}`}>
+              <div key={fullDate} className={`flex flex-col relative h-full ${index < 2 ? 'after:content-[""] after:absolute after:right-[-12px] after:top-0 after:h-full after:w-[2px] after:bg-gray-300 dark:after:bg-gray-600' : ''}`}>
                 <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-t-lg">
                   <h2 className="text-xl font-semibold">{day}</h2>
                   <p className="text-gray-500">{date}</p>
@@ -366,7 +371,7 @@ export default function PostWeek() {
                     className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
                       post?.status === 'scheduled' ? 'border-green-500' : ''
                     }`}
-                    onClick={() => handlePostClick(day)}
+                    onClick={() => handlePostClick(fullDate)}
                   >
                     {post ? (
                       <>
@@ -390,9 +395,6 @@ export default function PostWeek() {
                             ))}
                           </div>
                         </div>
-                        <div className="mb-4">
-                          <span className="font-medium">Best Time to Post:</span> {post.bestTime}
-                        </div>
                         {post.status === 'scheduled' && (
                           <div className="text-green-600 font-medium">
                             Scheduled for {post.scheduledTime}
@@ -413,34 +415,113 @@ export default function PostWeek() {
       </div>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-4xl bg-white dark:bg-gray-800">
+        <DialogContent className={`max-w-4xl bg-white dark:bg-gray-800 border-8 rounded-2xl shadow-xl ${
+          selectedPost?.status === 'scheduled' 
+            ? 'border-blue-500 dark:border-blue-600' 
+            : selectedPost?.status === 'published'
+            ? 'border-green-500 dark:border-green-600'
+            : selectedPost?.status === 'failed'
+            ? 'border-red-500 dark:border-red-600'
+            : 'border-yellow-500 dark:border-yellow-600'
+        }`}>
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">Edit Post for {selectedPost?.day}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+              Edit Post for {selectedPost?.timeToPost ? new Date(selectedPost.timeToPost).toLocaleDateString() : ''}
+            </DialogTitle>
           </DialogHeader>
           {selectedPost && (
-            <div className="grid grid-cols-2 gap-8 py-6">
-              <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6 py-4">
+              {/* Left Column - Image Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Post Image
+                  </Label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                    {selectedPost.imageUrl ? (
+                      <div className="relative">
+                        <img 
+                          src={selectedPost.imageUrl} 
+                          alt="Post preview" 
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-40">
+                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 mb-2 text-xs text-center">
+                          Drag and drop an image here, or click to select
+                        </p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                          disabled={uploadingImage}
+                          size="sm"
+                        >
+                          {uploadingImage ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            'Select Image'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                    Recommended Media
+                  </Label>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-300">
+                        Suggested images/videos for this post:
+                      </p>
+                      <ul className="list-disc list-inside space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
+                        <li>Gameplay screenshot showing [specific feature]</li>
+                        <li>Character close-up with [specific emotion]</li>
+                        <li>Action sequence from [specific level]</li>
+                        <li>Behind-the-scenes development clip</li>
+                        <li>Community highlight reel</li>
+                      </ul>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Tip: Use high-quality images (1920x1080) and keep videos under 60 seconds for best engagement.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Main Content */}
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="postType" className="text-base font-medium text-gray-700 dark:text-gray-300">
-                    Post Type
+                    Title
                   </Label>
                   <Input
                     id="postType"
                     value={selectedPost.postType}
                     onChange={(e) => setSelectedPost({...selectedPost, postType: e.target.value})}
-                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="platform" className="text-base font-medium text-gray-700 dark:text-gray-300">
-                    Platform
-                  </Label>
-                  <Input
-                    id="platform"
-                    value={selectedPost.platform}
-                    onChange={(e) => setSelectedPost({...selectedPost, platform: e.target.value})}
-                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-9"
                   />
                 </div>
 
@@ -464,20 +545,8 @@ export default function PostWeek() {
                     id="hashtags"
                     value={selectedPost.hashtags.join(', ')}
                     onChange={(e) => setSelectedPost({...selectedPost, hashtags: e.target.value.split(',').map(tag => tag.trim())})}
-                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-9"
                     placeholder="Enter hashtags separated by commas"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bestTime" className="text-base font-medium text-gray-700 dark:text-gray-300">
-                    Recommended Time
-                  </Label>
-                  <Input
-                    id="bestTime"
-                    value={selectedPost.bestTime}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
                   />
                 </div>
 
@@ -487,15 +556,14 @@ export default function PostWeek() {
                   </Label>
                   <Input
                     id="scheduledTime"
-                    type="datetime-local"
+                    type="time"
                     value={selectedPost.scheduledTime || ''}
                     onChange={(e) => setSelectedPost({...selectedPost, scheduledTime: e.target.value})}
-                    min={new Date(Date.now() + 1 * 60000).toISOString().slice(0, 16)}
-                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-10"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white h-9"
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-2">
                   <Button
                     onClick={handleSchedule}
                     disabled={scheduling || selectedPost?.status === 'published'}
@@ -541,84 +609,6 @@ export default function PostWeek() {
                       </Button>
                     </>
                   )}
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
-                    Post Image
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
-                    {selectedPost.imageUrl ? (
-                      <div className="relative">
-                        <img 
-                          src={selectedPost.imageUrl} 
-                          alt="Post preview" 
-                          className="w-full h-64 object-cover rounded-lg"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleRemoveImage}
-                          className="absolute top-2 right-2"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-64">
-                        <Upload className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-gray-500 dark:text-gray-400 mb-4">
-                          Drag and drop an image here, or click to select
-                        </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => document.getElementById('image-upload')?.click()}
-                          disabled={uploadingImage}
-                        >
-                          {uploadingImage ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Uploading...
-                            </>
-                          ) : (
-                            'Select Image'
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
-                    Recommended Media
-                  </Label>
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Suggested images/videos for this post:
-                      </p>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                        <li>Gameplay screenshot showing [specific feature]</li>
-                        <li>Character close-up with [specific emotion]</li>
-                        <li>Action sequence from [specific level]</li>
-                        <li>Behind-the-scenes development clip</li>
-                        <li>Community highlight reel</li>
-                      </ul>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Tip: Use high-quality images (1920x1080) and keep videos under 60 seconds for best engagement.
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
