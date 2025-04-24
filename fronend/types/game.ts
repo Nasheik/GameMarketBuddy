@@ -4,11 +4,8 @@ export interface Game {
   description?: string;
   genre?: string;
   manual_tags?: string[];
-  target_platforms?: string[];
-  marketing_platforms?: string[];
   development_stage?: string;
-  marketing_goals?: string;
-  tone_and_style?: string;
+  do_not_include?: string;
   created_at?: string;
   updated_at?: string;
 } 
