@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     avatar_url TEXT,
+    stripe_customer_id TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -16,12 +17,8 @@ CREATE TABLE IF NOT EXISTS public.games (
     genre TEXT NOT NULL,
     description TEXT,
     manual_tags TEXT[],
-    target_platforms TEXT[] NOT NULL,
-    marketing_platforms TEXT[] NOT NULL,
     development_stage TEXT NOT NULL,
-    marketing_goals TEXT NOT NULL,
-    tone_and_style TEXT NOT NULL,
-    short_description TEXT,
+    not_included TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -31,12 +28,10 @@ CREATE TABLE IF NOT EXISTS public.saved_posts (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
     game_id UUID REFERENCES public.games(id) ON DELETE CASCADE NOT NULL,
-    day_of_week TEXT NOT NULL,
-    post_type TEXT NOT NULL,
+    title TEXT NOT NULL,
     platform TEXT NOT NULL,
     content TEXT NOT NULL,
     hashtags TEXT[] NOT NULL,
-    best_time TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -46,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_games_user_id ON public.games(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_posts_user_id ON public.saved_posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_posts_game_id ON public.saved_posts(game_id);
-CREATE INDEX IF NOT EXISTS idx_saved_posts_day_of_week ON public.saved_posts(day_of_week);
+CREATE INDEX IF NOT EXISTS users_stripe_customer_id_idx ON public.users(stripe_customer_id);
 
 -- Enable Row Level Security
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;

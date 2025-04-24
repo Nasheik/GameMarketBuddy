@@ -22,7 +22,8 @@ interface Post {
   content: string;
   hashtags: string[];
   scheduledTime?: string;  // User's selected time in local format
-  timeToPost?: string;     // UTC time from database
+  postDate?: string;       // Date from database
+  postTime?: string;       // Time from database
   imageUrl?: string;
   status?: 'draft' | 'scheduled' | 'published' | 'failed' | 'posted';
 }
@@ -76,18 +77,15 @@ export default function PostWeek() {
         .from('saved_posts')
         .select('*')
         .eq('game_id', selectedGame.id)
-        .order('time_to_post');
+        .order('post_date')
+        .order('post_time');
 
       if (savedPosts) {
         const formattedPosts = savedPosts.map(post => {
           // Convert UTC time to local time for the time input
           let localTime;
-          if (post.time_to_post) {
-            const utcDate = new Date(post.time_to_post);
-            // Get the local time components
-            const hours = String(utcDate.getHours()).padStart(2, '0');
-            const minutes = String(utcDate.getMinutes()).padStart(2, '0');
-            // Format as HH:MM for time input
+          if (post.post_time) {
+            const [hours, minutes] = post.post_time.split(':');
             localTime = `${hours}:${minutes}`;
           }
           
@@ -97,7 +95,8 @@ export default function PostWeek() {
             content: post.content,
             hashtags: post.hashtags,
             scheduledTime: localTime,
-            timeToPost: post.time_to_post,
+            postDate: post.post_date,
+            postTime: post.post_time,
             status: post.status,
             imageUrl: post.media_url
           };
@@ -151,8 +150,8 @@ export default function PostWeek() {
 
   const handlePostClick = (date: string) => {
     const post = posts.find(p => {
-      if (!p.timeToPost) return false;
-      const postDate = new Date(p.timeToPost).toISOString().split('T')[0];
+      if (!p.postDate) return false;
+      const postDate = new Date(p.postDate).toISOString().split('T')[0];
       return postDate === date;
     });
     if (post) {
@@ -175,18 +174,20 @@ export default function PostWeek() {
           platform: selectedPost.platform,
           content: selectedPost.content,
           hashtags: selectedPost.hashtags,
-          time_to_post: new Date(selectedPost.scheduledTime || '').toISOString(),
+          post_date: new Date(selectedPost.scheduledTime || '').toISOString().split('T')[0],
+          post_time: new Date(selectedPost.scheduledTime || '').toISOString().split('T')[1].split('.')[0],
           media_url: selectedPost.imageUrl,
           media_type: selectedPost.imageUrl ? 'image' : null
         })
         .eq('game_id', selectedGame.id)
-        .eq('time_to_post', selectedPost.timeToPost);
+        .eq('post_date', selectedPost.postDate)
+        .eq('post_time', selectedPost.postTime);
 
       if (error) throw error;
 
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post.timeToPost === selectedPost.timeToPost ? selectedPost : post
+          post.postDate === selectedPost.postDate && post.postTime === selectedPost.postTime ? selectedPost : post
         )
       );
       setIsEditModalOpen(false);
@@ -202,7 +203,7 @@ export default function PostWeek() {
     try {
       const file = e.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${selectedGame.id}-${selectedPost.timeToPost}-${Date.now()}.${fileExt}`;
+      const fileName = `${selectedGame.id}-${selectedPost.postTime}-${Date.now()}.${fileExt}`;
       const filePath = `post-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -253,12 +254,14 @@ export default function PostWeek() {
       const newStatus = selectedPost.status === 'scheduled' ? 'draft' : 'scheduled';
       
       // Convert local time to UTC before saving
-      let utcDateTime = null;
+      let postDate = null;
+      let postTime = null;
       if (selectedPost.scheduledTime) {
         const [hours, minutes] = selectedPost.scheduledTime.split(':').map(Number);
         const localDateTime = new Date();
         localDateTime.setHours(hours, minutes, 0, 0);
-        utcDateTime = localDateTime.toISOString();
+        postDate = localDateTime.toISOString().split('T')[0];
+        postTime = localDateTime.toISOString().split('T')[1].split('.')[0];
       }
       
       // Update both post content and scheduling status in a single operation
@@ -269,7 +272,8 @@ export default function PostWeek() {
         hashtags: selectedPost.hashtags,
         status: newStatus,
         ...(newStatus === 'scheduled' ? {
-          time_to_post: utcDateTime,
+          post_date: postDate,
+          post_time: postTime,
           media_url: selectedPost.imageUrl,
           media_type: selectedPost.imageUrl ? 'image' : null
         } : {})
@@ -279,13 +283,14 @@ export default function PostWeek() {
         .from('saved_posts')
         .update(updateData)
         .eq('game_id', selectedGame.id)
-        .eq('time_to_post', selectedPost.timeToPost);
+        .eq('post_date', selectedPost.postDate)
+        .eq('post_time', selectedPost.postTime);
 
       if (error) throw error;
 
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post.timeToPost === selectedPost.timeToPost ? { ...selectedPost, status: newStatus } : post
+          post.postDate === selectedPost.postDate && post.postTime === selectedPost.postTime ? { ...selectedPost, status: newStatus } : post
         )
       );
       setSelectedPost({ ...selectedPost, status: newStatus });
@@ -357,8 +362,8 @@ export default function PostWeek() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
             {weekDates.slice(currentIndex, currentIndex + 3).map(({ day, date, fullDate }, index) => {
               const post = posts.find(p => {
-                if (!p.timeToPost) return false;
-                const postDate = new Date(p.timeToPost).toISOString().split('T')[0];
+                if (!p.postDate) return false;
+                const postDate = new Date(p.postDate).toISOString().split('T')[0];
                 return postDate === fullDate;
               });
               return (
@@ -430,7 +435,7 @@ export default function PostWeek() {
         }`}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-              Edit Post for {selectedPost?.timeToPost ? new Date(selectedPost.timeToPost).toLocaleDateString() : ''}
+              Edit Post for {selectedPost?.postTime ? new Date(selectedPost.postTime).toLocaleTimeString() : ''}
             </DialogTitle>
           </DialogHeader>
           {selectedPost && (

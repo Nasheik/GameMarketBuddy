@@ -15,7 +15,8 @@ interface GeneratedPost {
 }
 
 interface SavedPost extends GeneratedPost {
-  timeToPost: string;
+  postDate: string;
+  postTime: string;
 }
 
 // Validation function to ensure the response matches our schema
@@ -131,7 +132,8 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
           platform: post.platform,
           content: post.content,
           hashtags: post.hashtags,
-          time_to_post: targetDate.toISOString(),
+          post_date: targetDate.toISOString().split('T')[0],
+          post_time: targetDate.toISOString().split('T')[1].split('.')[0],
           created_at: new Date().toISOString()
         });
 
@@ -141,7 +143,8 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
       }
 
       savedPosts.push({
-        timeToPost: targetDate.toISOString(),
+        postDate: targetDate.toISOString().split('T')[0],
+        postTime: targetDate.toISOString().split('T')[1].split('.')[0],
         ...post
       });
     }
