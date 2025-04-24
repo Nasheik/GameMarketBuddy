@@ -367,7 +367,7 @@ export default function PostWeek() {
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{day}</h2>
                     <p className="text-gray-500 dark:text-gray-400">{date}</p>
                   </div>
-                  <div className="flex-grow">
+                  <div className="flex-grow p-4">
                     <Card 
                       className={`p-4 cursor-pointer hover:shadow-lg transition-shadow bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 ${
                         post?.status === 'scheduled' ? 'border-green-500 dark:border-green-600' : ''
