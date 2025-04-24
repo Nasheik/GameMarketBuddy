@@ -72,14 +72,14 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Game Details</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Game Details</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
             >
               <X className="h-6 w-6" />
             </button>
@@ -88,12 +88,12 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
           <form ref={formRef} action={handleSubmit} className="space-y-8">
             {/* Game Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Game Title</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Game Title</label>
               <input
                 type="text"
                 name="gameTitle"
                 required
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder="Enter game title"
                 defaultValue={selectedGame?.title}
               />
@@ -101,11 +101,11 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
 
             {/* Game Genre */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Game Genre</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Game Genre</label>
               <select
                 name="gameGenre"
                 required
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 defaultValue={selectedGame?.genre}
               >
                 <option value="">Select a genre</option>
@@ -122,11 +122,11 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags</label>
               <input
                 type="text"
                 name="manualTags"
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder="Add custom tags (comma separated)"
                 defaultValue={selectedGame?.manual_tags?.join(', ')}
               />
@@ -134,11 +134,11 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
 
             {/* Game Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Game Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Game Description</label>
               <textarea
                 name="shortDescription"
                 required
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 rows={4}
                 placeholder="Enter a description of your game"
                 defaultValue={selectedGame?.description}
@@ -147,10 +147,10 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
 
             {/* Do Not Include */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Do Not Include</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do Not Include</label>
               <textarea
                 name="doNotInclude"
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 rows={4}
                 placeholder="Enter elements you do not want to include in the marketing content"
                 defaultValue={selectedGame?.do_not_include}
@@ -159,11 +159,11 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
 
             {/* Development Stage */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Development Stage</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Development Stage</label>
               <select
                 name="developmentStage"
                 required
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 defaultValue={selectedGame?.development_stage || ''}
               >
                 <option value="">Select development stage</option>
@@ -180,13 +180,13 @@ export default function GameDetailsModal({ isOpen, onClose }: GameDetailsModalPr
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
               >
                 Save Changes
               </button>

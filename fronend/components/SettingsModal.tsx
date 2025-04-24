@@ -127,8 +127,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <button
                       className={`px-3 py-1 rounded-md text-sm font-medium ${
                         integration.connected
-                          ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30'
-                          : 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/30'
+                          ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                          : 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
                       }`}
                     >
                       {integration.connected ? 'Disconnect' : 'Connect'}
