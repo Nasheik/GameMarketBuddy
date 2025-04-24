@@ -13,9 +13,9 @@ export default function DashboardLayout({
   return (
     <UserProvider>
       <GameProvider>
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
           <TopNav />
-          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <main className="max-w-[1400px] mx-auto py-4 px-4">
             {children}
           </main>
         </div>

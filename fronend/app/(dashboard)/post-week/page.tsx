@@ -298,7 +298,7 @@ export default function PostWeek() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-800">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -306,111 +306,115 @@ export default function PostWeek() {
 
   if (!selectedGame) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">No game selected. Please select a game from the sidebar.</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-800">
+        <p className="text-gray-500 dark:text-gray-400">No game selected. Please select a game from the sidebar.</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-4 h-[calc(100vh-64px)] flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold">Post Week</h1>
-        <Button 
-          onClick={handleGenerate} 
-          disabled={generating}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            'Generate New Posts'
-          )}
-        </Button>
-      </div>
-
-      <div className="flex flex-col flex-grow">
-        <div className="flex justify-center mr-40 items-center mb-4 gap-10">
-          <Button
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className="bg-gray-200 hover:bg-gray-300"
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
+      <div className="h-[calc(100vh-64px)] flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Post Week</h1>
+          <Button 
+            onClick={handleGenerate} 
+            disabled={generating}
+            className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
           >
-            ← Previous
-          </Button>
-          <div className="text-gray-600 dark:text-gray-300 font-medium">
-            Showing: {weekDates[currentIndex]?.date} - {weekDates[currentIndex + 2]?.date}
-          </div>
-          <Button
-            onClick={handleNext}
-            disabled={currentIndex >= weekDates.length - 3}
-            className="bg-gray-200 hover:bg-gray-300"
-          >
-            Next →
+            {generating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate New Posts'
+            )}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-grow">
-          {weekDates.slice(currentIndex, currentIndex + 3).map(({ day, date, fullDate }, index) => {
-            const post = posts.find(p => {
-              if (!p.timeToPost) return false;
-              const postDate = new Date(p.timeToPost).toISOString().split('T')[0];
-              return postDate === fullDate;
-            });
-            return (
-              <div key={fullDate} className={`flex flex-col relative h-full ${index < 2 ? 'after:content-[""] after:absolute after:right-[-12px] after:top-0 after:h-full after:w-[2px] after:bg-gray-300 dark:after:bg-gray-600' : ''}`}>
-                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-t-lg">
-                  <h2 className="text-xl font-semibold">{day}</h2>
-                  <p className="text-gray-500">{date}</p>
-                </div>
-                <div className="flex-grow">
-                  <Card 
-                    className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
-                      post?.status === 'scheduled' ? 'border-green-500' : ''
-                    }`}
-                    onClick={() => handlePostClick(fullDate)}
-                  >
-                    {post ? (
-                      <>
-                        <div className="mb-4">
-                          <span className="font-medium">Type:</span> {post.postType}
-                        </div>
-                        <div className="mb-4">
-                          <span className="font-medium">Platform:</span> {post.platform}
-                        </div>
-                        <div className="mb-4">
-                          <span className="font-medium">Content:</span>
-                          <p className="mt-2 text-gray-600">{post.content}</p>
-                        </div>
-                        <div className="mb-4">
-                          <span className="font-medium">Hashtags:</span>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {post.hashtags.map((tag, index) => (
-                              <span key={index} className="bg-gray-100 px-2 py-1 rounded text-sm">
-                                {tag}
-                              </span>
-                            ))}
+        <div className="flex flex-col flex-grow">
+          <div className="flex justify-center items-center mb-4 gap-10">
+            <Button
+              onClick={handlePrevious}
+              disabled={currentIndex === 0}
+              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
+            >
+              ← Previous
+            </Button>
+            <div className="text-gray-600 dark:text-gray-300 font-medium">
+              Showing: {weekDates[currentIndex]?.date} - {weekDates[currentIndex + 2]?.date}
+            </div>
+            <Button
+              onClick={handleNext}
+              disabled={currentIndex >= weekDates.length - 3}
+              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
+            >
+              Next →
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
+            {weekDates.slice(currentIndex, currentIndex + 3).map(({ day, date, fullDate }, index) => {
+              const post = posts.find(p => {
+                if (!p.timeToPost) return false;
+                const postDate = new Date(p.timeToPost).toISOString().split('T')[0];
+                return postDate === fullDate;
+              });
+              return (
+                <div key={fullDate} className={`flex flex-col relative h-full ${index < 2 ? 'after:content-[""] after:absolute after:right-[-8px] after:top-0 after:h-full after:w-[1px] after:bg-gray-300 dark:after:bg-gray-700' : ''}`}>
+                  <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-t-lg">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{day}</h2>
+                    <p className="text-gray-500 dark:text-gray-400">{date}</p>
+                  </div>
+                  <div className="flex-grow">
+                    <Card 
+                      className={`p-4 cursor-pointer hover:shadow-lg transition-shadow bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 ${
+                        post?.status === 'scheduled' ? 'border-green-500 dark:border-green-600' : ''
+                      }`}
+                      onClick={() => handlePostClick(fullDate)}
+                    >
+                      {post ? (
+                        <>
+                          <div className="mb-3">
+                            <span className="font-medium text-gray-900 dark:text-white">Type:</span> 
+                            <span className="text-gray-700 dark:text-gray-300"> {post.postType}</span>
                           </div>
-                        </div>
-                        {post.status === 'scheduled' && (
-                          <div className="text-green-600 font-medium">
-                            Scheduled for {post.scheduledTime}
+                          <div className="mb-3">
+                            <span className="font-medium text-gray-900 dark:text-white">Platform:</span> 
+                            <span className="text-gray-700 dark:text-gray-300"> {post.platform}</span>
                           </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-gray-500 italic">
-                        No post generated for this day
-                      </div>
-                    )}
-                  </Card>
+                          <div className="mb-3">
+                            <span className="font-medium text-gray-900 dark:text-white">Content:</span>
+                            <p className="mt-2 text-gray-600 dark:text-gray-400">{post.content}</p>
+                          </div>
+                          <div className="mb-3">
+                            <span className="font-medium text-gray-900 dark:text-white">Hashtags:</span>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {post.hashtags.map((tag, index) => (
+                                <span key={index} className="bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded text-sm text-gray-700 dark:text-gray-300">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {post.status === 'scheduled' && (
+                            <div className="text-green-600 dark:text-green-400 font-medium">
+                              Scheduled for {post.scheduledTime}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-gray-500 dark:text-gray-400 italic">
+                          No post generated for this day
+                        </div>
+                      )}
+                    </Card>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -456,7 +460,7 @@ export default function PostWeek() {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-40">
-                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                        <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-2" />
                         <p className="text-gray-500 dark:text-gray-400 mb-2 text-xs text-center">
                           Drag and drop an image here, or click to select
                         </p>
@@ -472,6 +476,7 @@ export default function PostWeek() {
                           onClick={() => document.getElementById('image-upload')?.click()}
                           disabled={uploadingImage}
                           size="sm"
+                          className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           {uploadingImage ? (
                             <>
@@ -569,12 +574,12 @@ export default function PostWeek() {
                     disabled={scheduling || selectedPost?.status === 'published'}
                     className={`${
                       selectedPost?.status === 'scheduled' 
-                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                        ? 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white' 
                         : selectedPost?.status === 'published'
                         ? 'bg-gray-600 text-white cursor-not-allowed'
                         : selectedPost?.status === 'failed'
-                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        ? 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white'
+                        : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'
                     }`}
                   >
                     {scheduling ? (
@@ -603,7 +608,7 @@ export default function PostWeek() {
                       </Button>
                       <Button 
                         onClick={handleSavePost}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white"
                       >
                         Save Changes
                       </Button>

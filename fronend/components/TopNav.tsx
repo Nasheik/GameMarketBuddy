@@ -44,11 +44,11 @@ export default function TopNav() {
 
   return (
     <>
-      <div className="bg-white border-b shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
-              <h2 className="text-xl font-bold">Game Market Buddy</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Game Market Buddy</h2>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -59,7 +59,7 @@ export default function TopNav() {
                     const game = games.find((g) => g.id === e.target.value);
                     if (game) setSelectedGame(game);
                   }}
-                  className="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -76,10 +76,10 @@ export default function TopNav() {
                 </select>
                 <button
                   onClick={() => setIsGameDetailsOpen(true)}
-                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+                  className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
                   title="Edit Game Details"
                 >
-                  <Pencil className="h-5 w-5 text-gray-600" />
+                  <Pencil className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
             </div>
@@ -88,16 +88,16 @@ export default function TopNav() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80">
-                    <span className="text-sm font-medium text-gray-900">{displayName}</span>
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-sm font-medium text-gray-600">{initials}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</span>
+                    <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{initials}</span>
                     </div>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600 cursor-pointer"
+                    className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
@@ -106,10 +106,10 @@ export default function TopNav() {
               </DropdownMenu>
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
                 title="Settings"
               >
-                <Settings className="h-6 w-6 text-gray-600" />
+                <Settings className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
           </div>
