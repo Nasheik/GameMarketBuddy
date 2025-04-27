@@ -1,20 +1,22 @@
 -- Add time_to_post, media_url, and status columns to saved_posts table
 ALTER TABLE public.saved_posts
-ADD COLUMN IF NOT EXISTS post_date DATE,
-ADD COLUMN IF NOT EXISTS post_time TIME,
+ADD COLUMN IF NOT EXISTS local_date DATE,
+ADD COLUMN IF NOT EXISTS time_to_post TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+ADD COLUMN IF NOT EXISTS media_suggestion TEXT,
 ADD COLUMN IF NOT EXISTS media_url TEXT,
 ADD COLUMN IF NOT EXISTS media_type TEXT,
 ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'scheduled', 'published', 'failed'));
 
 -- Create index for faster lookups on time_to_post
-CREATE INDEX IF NOT EXISTS saved_posts_post_date_idx ON public.saved_posts(post_date);
-CREATE INDEX IF NOT EXISTS saved_posts_post_time_idx ON public.saved_posts(post_time);
+CREATE INDEX IF NOT EXISTS saved_posts_local_date_idx ON public.saved_posts(local_date);
+CREATE INDEX IF NOT EXISTS saved_posts_time_to_post_idx ON public.saved_posts(time_to_post);
 
 -- Add comments to columns
 COMMENT ON COLUMN public.saved_posts.time_to_post IS 'Scheduled time for the post to be published';
 COMMENT ON COLUMN public.saved_posts.media_url IS 'URL of the media file (image or video) associated with the post';
 COMMENT ON COLUMN public.saved_posts.media_type IS 'Type of media (image or video)';
 COMMENT ON COLUMN public.saved_posts.status IS 'Status of the post (draft, scheduled, published, failed)';
+COMMENT ON COLUMN public.saved_posts.local_date IS 'The local date when the post should be published, used for week schedule constraints';
 
 -- Enable the http extension
 CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;

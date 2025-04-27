@@ -17,11 +17,8 @@ export async function saveGameDetails(formData: FormData, gameId?: string) {
       genre: formData.get('gameGenre'),
       manual_tags: formData.get('manualTags') ? (formData.get('manualTags') as string).split(',').map(tag => tag.trim()) : [],
       description: formData.get('shortDescription'),
-      target_platforms: Array.from(formData.getAll('targetPlatforms')),
-      marketing_platforms: Array.from(formData.getAll('marketingPlatforms')),
       development_stage: formData.get('developmentStage'),
-      marketing_goals: formData.get('marketingGoals'),
-      tone_and_style: formData.get('toneAndStyle'),
+      not_included: formData.get('notIncluded'),
     };
 
     if (gameId) {
@@ -36,7 +33,10 @@ export async function saveGameDetails(formData: FormData, gameId?: string) {
       // Create new game
       const { error } = await supabase
         .from('games')
-        .insert(gameData);
+        .insert([{
+          ...gameData,
+          created_at: new Date().toISOString()
+        }]);
       
       if (error) throw error;
     }

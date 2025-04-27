@@ -15,18 +15,32 @@ async function createGame(formData: FormData) {
   const origin = headersList.get('origin') || '';
   const cookie = headersList.get('cookie') || '';
   
-  const response = await fetch(`${origin}/api/games`, {
-    method: 'POST',
-    body: formData,
-    headers: {
-      'Cookie': cookie
-    }
-  });
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to create game');
+  if (!session) {
+    throw new Error('Not authenticated');
+  }
+
+  const gameData = {
+    user_id: session.user.id,
+    title: formData.get('gameTitle'),
+    description: formData.get('gameDescription'),
+    genre: formData.get('genre'),
+    manual_tags: formData.get('manualTags')?.toString().split(',').map(tag => tag.trim()) || [],
+    development_stage: formData.get('developmentStage'),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('games')
+    .insert([gameData])
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message || 'Failed to create game');
   }
 
   redirect('/dashboard');
@@ -66,47 +80,47 @@ export default async function CreateGamePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">Create Your Game Profile</h1>
-          <form className="space-y-6" action={createGame}>
+          <h1 className="text-3xl font-bold mb-4">Enter Your Game's Details</h1>
+          <form className="space-y-3" action={createGame}>
             <div>
-              <label htmlFor="gameName" className="block text-sm font-medium mb-2">
-                Game Name
+              <label htmlFor="gameTitle" className="block text-sm font-medium mb-1">
+                Game Title
               </label>
               <input
                 type="text"
-                id="gameName"
-                name="gameName"
+                id="gameTitle"
+                name="gameTitle"
                 required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your game's name"
               />
             </div>
             
             <div>
-              <label htmlFor="gameDescription" className="block text-sm font-medium mb-2">
+              <label htmlFor="gameDescription" className="block text-sm font-medium mb-1">
                 Game Description
               </label>
               <textarea
                 id="gameDescription"
                 name="gameDescription"
                 required
-                rows={4}
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Describe your game"
               />
             </div>
 
             <div>
-              <label htmlFor="genre" className="block text-sm font-medium mb-2">
+              <label htmlFor="genre" className="block text-sm font-medium mb-1">
                 Genre
               </label>
               <select
                 id="genre"
                 name="genre"
                 required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select a genre</option>
                 <option value="action">Action</option>
@@ -121,68 +135,27 @@ export default async function CreateGamePage() {
             </div>
 
             <div>
-              <label htmlFor="manualTags" className="block text-sm font-medium mb-2">
+              <label htmlFor="manualTags" className="block text-sm font-medium mb-1">
                 Custom Tags
               </label>
               <input
                 type="text"
                 id="manualTags"
                 name="manualTags"
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Add custom tags (comma separated)"
               />
             </div>
 
             <div>
-              <label htmlFor="targetPlatforms" className="block text-sm font-medium mb-2">
-                Target Platforms
-              </label>
-              <select
-                id="targetPlatforms"
-                name="targetPlatforms"
-                multiple
-                required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="steam">Steam</option>
-                <option value="itch">itch.io</option>
-                <option value="epic">Epic Games Store</option>
-                <option value="gog">GOG</option>
-                <option value="console">Console</option>
-                <option value="mobile">Mobile</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="marketingPlatforms" className="block text-sm font-medium mb-2">
-                Marketing Platforms
-              </label>
-              <select
-                id="marketingPlatforms"
-                name="marketingPlatforms"
-                multiple
-                required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="twitter">Twitter</option>
-                <option value="reddit">Reddit</option>
-                <option value="instagram">Instagram</option>
-                <option value="tiktok">TikTok</option>
-                <option value="youtube">YouTube</option>
-                <option value="discord">Discord</option>
-                <option value="facebook">Facebook</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="releaseStatus" className="block text-sm font-medium mb-2">
+              <label htmlFor="developmentStage" className="block text-sm font-medium mb-1">
                 Development Stage
               </label>
               <select
-                id="releaseStatus"
-                name="releaseStatus"
+                id="developmentStage"
+                name="developmentStage"
                 required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select development stage</option>
                 <option value="prototype">Prototype</option>
@@ -194,45 +167,11 @@ export default async function CreateGamePage() {
             </div>
 
             <div>
-              <label htmlFor="marketingGoals" className="block text-sm font-medium mb-2">
-                Marketing Goals
-              </label>
-              <input
-                type="text"
-                id="marketingGoals"
-                name="marketingGoals"
-                required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Wishlist growth, Devlog visibility, Community engagement"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="toneAndStyle" className="block text-sm font-medium mb-2">
-                Tone and Style
-              </label>
-              <select
-                id="toneAndStyle"
-                name="toneAndStyle"
-                required
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select tone and style</option>
-                <option value="casual">Casual</option>
-                <option value="hype">Hype</option>
-                <option value="devlog">Devlog</option>
-                <option value="inspirational">Inspirational</option>
-                <option value="professional">Professional</option>
-                <option value="humorous">Humorous</option>
-              </select>
-            </div>
-
-            <div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-500 transition-colors font-medium"
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors font-medium"
               >
-                Create Game Profile
+                Create Game
               </button>
             </div>
           </form>

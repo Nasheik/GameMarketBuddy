@@ -5,7 +5,7 @@ export interface Game {
   genre?: string;
   manual_tags?: string[];
   development_stage?: string;
-  do_not_include?: string;
+  not_included?: string;
   created_at?: string;
   updated_at?: string;
 } 

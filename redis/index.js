@@ -23,24 +23,24 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 // Enqueue route
 app.post('/enqueue', async (req, res) => {
-  const { post_id } = req.body;
+  const { post_id, content, platform, time_to_post } = req.body;
   console.log('Job Enqueuing: ', post_id);
   if (!post_id) return res.status(400).send('ID is required');
 
-  const { data: post, error } = await supabase
-    .from('saved_posts')
-    .select('*')
-    .eq('id', post_id)
-    .single();
+  // const { data: post, error } = await supabase
+  //   .from('saved_posts')
+  //   .select('*')
+  //   .eq('id', post_id)
+  //   .single();
 
-  if(error) {
-    console.error('Error fetching post:', error);
-    return res.status(500).send('Error fetching post');
-  }
+  // if(error) {
+  //   console.error('Error fetching post:', error);
+  //   return res.status(500).send('Error fetching post');
+  // }
 
-  if (error || !post) return res.status(404).send('Post not found');
+  // if (error || !post) return res.status(404).send('Post not found');
 
-  console.log('Post found:', post);
+  // console.log('Post found:', post);
 
   // if(post.status !== 'scheduled') {
   //   return res.status(400).send('Post is not scheduled');
@@ -49,16 +49,16 @@ app.post('/enqueue', async (req, res) => {
   // console.log((post.time_to_post).getTime())
   // console.log(new Date(post.time_to_post).getTime())+().getTime())
 
-  const delayMs = post.time_to_post ? new Date(post.time_to_post) - Date.now() : 0;
+  const delayMs = time_to_post ? new Date(time_to_post) - Date.now() : 0;
   if (delayMs < 0) {
-    console.log('Scheduled time is in the past:', post.time_to_post);
+    console.log('Scheduled time is in the past:', time_to_post);
     return res.status(400).send('Scheduled time is in the past');
   }
 
   await postQueue.add('postToSocialMedia', {
-    id: post.id,
-    content: post.content,
-    platform: post.platform
+    id: post_id,
+    content: content,
+    platform: platform
   }, {
     delay: delayMs
   });
@@ -75,7 +75,7 @@ new Worker('postQueue', async job => {
 
   await supabase
     .from('saved_posts')
-    .update({ status: 'posted' })
+    .update({ status: 'published' })
     .eq('id', id);
 
 }, { connection: redis });
