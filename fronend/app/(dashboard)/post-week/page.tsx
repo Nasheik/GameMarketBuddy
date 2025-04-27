@@ -238,23 +238,78 @@ export default function PostWeek() {
     setUploadingImage(true);
     try {
       const file = e.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${selectedGame.id}-${selectedPost.localDate}-${Date.now()}.${fileExt}`;
-      const filePath = `post-images/${fileName}`;
+      console.log('Starting upload for file:', file.name, 'type:', file.type);
+      
+      // Get presigned URL from our API
+      const response = await fetch('/api/upload-media', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+        }),
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from('post-images')
-        .upload(filePath, file);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(`Failed to get upload URL: ${response.status} ${response.statusText}`);
+      }
 
-      if (uploadError) throw uploadError;
+      const { presignedUrl, fileUrl } = await response.json();
+      console.log('Got presigned URL:', presignedUrl);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('post-images')
-        .getPublicUrl(filePath);
+      // Upload file directly to R2 using presigned URL
+      const uploadResponse = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+          'Origin': window.location.origin,
+        },
+        mode: 'cors',
+      });
 
-      setSelectedPost({ ...selectedPost, imageUrl: publicUrl });
+      if (!uploadResponse.ok) {
+        console.error('Upload Error:', {
+          status: uploadResponse.status,
+          statusText: uploadResponse.statusText
+        });
+        throw new Error(`Failed to upload file: ${uploadResponse.status} ${uploadResponse.statusText}`);
+      }
+
+      console.log('Upload successful, file URL:', fileUrl);
+
+      // Save the file URL to the database
+      const { error: dbError } = await supabase
+        .from('saved_posts')
+        .update({
+          media_url: fileUrl,
+          media_type: file.type.startsWith('image/') ? 'image' : 'video'
+        })
+        .eq('game_id', selectedGame.id)
+        .eq('local_date', selectedPost.localDate);
+
+      if (dbError) {
+        console.error('Error saving media URL to database:', dbError);
+        throw new Error('Failed to save media URL to database');
+      }
+
+      // Update the post with the new media URL
+      setSelectedPost({ ...selectedPost, imageUrl: fileUrl });
     } catch (error) {
       console.error('Error uploading image:', error);
+      if (error instanceof Error && error.message.includes('CORS')) {
+        alert('Failed to upload image: CORS error. Please check your R2 bucket CORS configuration.');
+      } else {
+        alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } finally {
       setUploadingImage(false);
     }
