@@ -56,4 +56,53 @@ export async function createCheckoutSession(priceId: string) {
     console.error("Error creating checkout session:", error);
     throw new Error("Failed to create checkout session");
   }
+}
+
+export async function validatePromoCode(formData: FormData) {
+  const promoCode = formData.get("promoCode")?.toString();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect("/sign-in");
+  }
+
+  if (promoCode?.toLowerCase() === "test") {
+    // Create a subscription for the user
+    const { error } = await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: user.id,
+        status: 'active',
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error("Error creating subscription:", error);
+      return redirect("/payment?error=Failed to create subscription");
+    }
+
+    // Check if user has any games
+    const { data: games } = await supabase
+      .from('games')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1);
+
+    // If user has no games, redirect to create-game
+    if (!games || games.length === 0) {
+      return redirect("/create-game");
+    }
+
+    // If user has games, redirect to dashboard
+    return redirect("/dashboard");
+  }
+
+  return redirect("/payment?error=Invalid promo code");
 } 
