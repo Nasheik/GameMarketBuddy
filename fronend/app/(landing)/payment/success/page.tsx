@@ -7,8 +7,9 @@ import { CheckCircle } from "lucide-react";
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: { session_id: string };
+  searchParams: Promise<{ session_id: string }>;
 }) {
+  const params = await searchParams;
   const supabase = await createClient();
 
   const {
