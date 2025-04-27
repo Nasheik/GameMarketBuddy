@@ -49,6 +49,7 @@ export default function PostWeek() {
   const supabase = createClient();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [scheduling, setScheduling] = useState(false);
+  const [originalScheduledTime, setOriginalScheduledTime] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -173,11 +174,12 @@ export default function PostWeek() {
   const handlePostClick = (date: string) => {
     const post = posts.find(p => {
       if (!p.localDate) return false;
-      const postDate = p.localDate
+      const postDate = p.localDate;
       return postDate === date;
     });
     if (post) {
       setSelectedPost(post);
+      setOriginalScheduledTime(post.scheduledTime || null);
       setIsEditModalOpen(true);
     }
   };
@@ -285,7 +287,7 @@ export default function PostWeek() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const newStatus = selectedPost.status === 'scheduled' ? 'draft' : 'scheduled';
+      const newStatus = selectedPost.status === 'scheduled' && originalScheduledTime === selectedPost.scheduledTime ? 'draft' : 'scheduled';
       
       // Convert local time to UTC
       let timeToPost = null;
@@ -329,12 +331,79 @@ export default function PostWeek() {
         )
       );
       setSelectedPost({ ...selectedPost, status: newStatus });
+      if (newStatus === 'scheduled') {
+        setOriginalScheduledTime(selectedPost.scheduledTime || null);
+      }
     } catch (error) {
       console.error('Error updating post status:', error);
     } finally {
       setScheduling(false);
     }
   };
+
+  const checkCurrentDayScheduledPosts = async () => {
+    if (!selectedGame) return;
+
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+
+    // Find today's post in the local state
+    const todayPost = posts.find(post => post.localDate === today && post.status === 'scheduled');
+
+    if (todayPost && todayPost.scheduledTime) {
+      // Parse the scheduled time
+      const [hours, minutes] = todayPost.scheduledTime.split(':').map(Number);
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
+
+      // If the scheduled time has passed, check the database for the current status
+      if (scheduledTime < now) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Get the current status from the database
+          const { data: dbPost } = await supabase
+            .from('saved_posts')
+            .select('status')
+            .eq('game_id', selectedGame.id)
+            .eq('local_date', today)
+            .single();
+
+          if (dbPost) {
+            // Update the local state with the status from the database
+            setPosts(prevPosts => 
+              prevPosts.map(post => 
+                post.localDate === today ? { ...post, status: dbPost.status } : post
+              )
+            );
+
+            // If the post is currently being edited, update the selectedPost state
+            if (selectedPost && selectedPost.localDate === today) {
+              setSelectedPost(prev => prev ? { ...prev, status: dbPost.status } : null);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking post status:', error);
+        }
+      }
+    }
+  };
+
+  // Add an interval to check current day's scheduled posts every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkCurrentDayScheduledPosts();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [posts, selectedGame]); // Add selectedGame as a dependency
+
+  // Also check when the component mounts
+  useEffect(() => {
+    checkCurrentDayScheduledPosts();
+  }, [posts, selectedGame]); // Add selectedGame as a dependency
 
   if (loading) {
     return (
@@ -689,7 +758,8 @@ export default function PostWeek() {
                         {selectedPost?.status === 'scheduled' ? 'Unscheduling...' : 'Scheduling...'}
                       </>
                     ) : selectedPost?.status === 'scheduled' ? (
-                      'Unschedule Post'
+                    // originalScheduledTime + "   " + selectedPost.scheduledTime
+                      originalScheduledTime !== selectedPost.scheduledTime ? 'Reschedule' : 'Unschedule Post'
                     ) : selectedPost?.status === 'published' ? (
                       'Published'
                     ) : selectedPost?.status === 'failed' ? (
