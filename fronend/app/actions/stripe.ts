@@ -77,7 +77,11 @@ export async function validatePromoCode(formData: FormData) {
       .insert({
         user_id: user.id,
         status: 'active',
-        current_period_start: new Date().toISOString(),
+        stripe_customer_id: 'Test',
+        stripe_subscription_id: 'Test',
+        // status: 'active',
+        plan_id: 'Test',
+        // current_period_start: new Date().toISOString(),
         current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
