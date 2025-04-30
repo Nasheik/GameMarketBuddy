@@ -1,6 +1,3 @@
-// npm install dotenv express ioredis bullmq @supabase/supabase-js twitter-api-v2 axios
-
-// index.js
 require('dotenv').config();
 const express = require('express');
 const IORedis = require('ioredis');
@@ -17,13 +14,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// const { Redis } = require('@upstash/redis')
-
-// const redis = new Redis({
-//   url: 'https://flexible-doe-25466.upstash.io',
-//   token: 'AWN6AAIjcDE1M2JmMzU4ZWQzN2U0MGYyOWJjYWI4OTJjMDNhNjMwYnAxMA',
-// })
-
 
 const redis = new IORedis(process.env.UPSTASH_REDIS_REST_URL, {
   password: process.env.UPSTASH_REDIS_REST_TOKEN,
@@ -36,41 +26,6 @@ const postQueue = new Queue('postQueue', { connection: redis });
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Enqueue route
-app.post('/enqueue', async (req, res) => {
-  const { post_id, content, platform, time_to_post } = req.body;
-  console.log('Job Enqueuing: ', post_id);
-  if (!post_id) return res.status(400).send('ID is required');
-
-
-  const delayMs = time_to_post ? new Date(time_to_post) - Date.now() : 0;
-  if (delayMs < 0) {
-    console.log('Scheduled time is in the past:', time_to_post);
-    return res.status(400).send('Scheduled time is in the past');
-  }
-
-  await postQueue.add('postToSocialMedia', {
-    id: post_id,
-    content: content,
-    platform: platform
-  }, {
-    delay: delayMs
-  });
-
-  console.log('Job Enqueued!');
-  res.send('Job scheduled');
-});
-
-const { TwitterApi } = require('twitter-api-v2');
-const axios = require('axios');
-const twitterClient = new TwitterApi({
-  appKey: process.env.TWITTER_API_KEY,
-  appSecret: process.env.TWITTER_API_SECRET,
-  accessToken: process.env.TWITTER_ACCESS_TOKEN,
-  accessSecret: process.env.TWITTER_ACCESS_SECRET,
-});
-
-// Worker
 new Worker('postQueue', async job => {
   const { id, content, platform, video_url } = job.data;
 
@@ -153,5 +108,3 @@ new Worker('postQueue', async job => {
   }
 
 }, { connection: redis });
-
-app.listen(3333, () => console.log('🚀 Server running on port 3333'));
