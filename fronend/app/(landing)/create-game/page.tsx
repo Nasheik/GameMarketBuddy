@@ -48,20 +48,22 @@ async function createGame(formData: FormData) {
 
 export default async function CreateGamePage() {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/sign-in');
   }
-
+console.log(user.id );
   // Check if user has an active subscription
   const { data: subscription } = await supabase
     .from('subscriptions')
-    .select('status, current_period_end')
-    .eq('user_id', session.user.id)
+    .select('*')
+    .eq('user_id', user.id)
     .eq('status', 'active')
     .gt('current_period_end', new Date().toISOString())
     .single();
+
+    console.log(subscription?.length);
 
   if (!subscription) {
     redirect('/payment');
@@ -71,7 +73,7 @@ export default async function CreateGamePage() {
   const { data: games } = await supabase
     .from('games')
     .select('id')
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .limit(1);
 
   if (games && games.length > 0) {
@@ -79,13 +81,13 @@ export default async function CreateGamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Enter Your Game's Details</h1>
+          <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Enter Your Game's Details</h1>
           <form className="space-y-3" action={createGame}>
             <div>
-              <label htmlFor="gameTitle" className="block text-sm font-medium mb-1">
+              <label htmlFor="gameTitle" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Game Title
               </label>
               <input
@@ -93,13 +95,13 @@ export default async function CreateGamePage() {
                 id="gameTitle"
                 name="gameTitle"
                 required
-                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your game's name"
               />
             </div>
             
             <div>
-              <label htmlFor="gameDescription" className="block text-sm font-medium mb-1">
+              <label htmlFor="gameDescription" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Game Description
               </label>
               <textarea
@@ -107,20 +109,20 @@ export default async function CreateGamePage() {
                 name="gameDescription"
                 required
                 rows={3}
-                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Describe your game"
               />
             </div>
 
             <div>
-              <label htmlFor="genre" className="block text-sm font-medium mb-1">
+              <label htmlFor="genre" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Genre
               </label>
               <select
                 id="genre"
                 name="genre"
                 required
-                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select a genre</option>
                 <option value="action">Action</option>
@@ -135,27 +137,27 @@ export default async function CreateGamePage() {
             </div>
 
             <div>
-              <label htmlFor="manualTags" className="block text-sm font-medium mb-1">
+              <label htmlFor="manualTags" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Custom Tags
               </label>
               <input
                 type="text"
                 id="manualTags"
                 name="manualTags"
-                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Add custom tags (comma separated)"
               />
             </div>
 
             <div>
-              <label htmlFor="developmentStage" className="block text-sm font-medium mb-1">
+              <label htmlFor="developmentStage" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Development Stage
               </label>
               <select
                 id="developmentStage"
                 name="developmentStage"
                 required
-                className="w-full px-3 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select development stage</option>
                 <option value="prototype">Prototype</option>
@@ -169,7 +171,7 @@ export default async function CreateGamePage() {
             <div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors font-medium"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors font-medium"
               >
                 Create Game
               </button>

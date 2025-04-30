@@ -7,27 +7,29 @@ const openai = new OpenAI({
 });
 
 interface GeneratedPost {
-  postType: string;
+  postTitle: string;
   platform: string;
   content: string;
   hashtags: string[];
   bestTime: string;
+  mediaSuggestion: string;
 }
 
 interface SavedPost extends GeneratedPost {
-  postDate: string;
-  postTime: string;
+  localDate: string;
+  scheduledTime: string;
 }
 
 // Validation function to ensure the response matches our schema
 function validatePost(post: any): post is GeneratedPost {
   return (
-    typeof post.postType === 'string' &&
+    typeof post.postTitle === 'string' &&
     typeof post.platform === 'string' &&
     typeof post.content === 'string' &&
     Array.isArray(post.hashtags) &&
     post.hashtags.every((tag: any) => typeof tag === 'string') &&
-    typeof post.bestTime === 'string'
+    typeof post.bestTime === 'string' &&
+    typeof post.mediaSuggestion === 'string'
   );
 }
 
@@ -61,19 +63,17 @@ export async function POST(request: Request) {
 Title: ${game.title}
 Genre: ${game.genre}${game.manual_tags ? `, ${game.manual_tags}` : ''}
 Description: ${game.description}
-Target Platforms: ${game.target_platforms.join(', ')}
-Marketing Platforms: ${game.marketing_platforms.join(', ')}
+Target Platforms: Twitter, TikTok
 Development Stage: ${game.development_stage}
-Marketing Goals: ${game.marketing_goals}
-Tone and Style: ${game.tone_and_style}
 
 For each day of the week (Monday through Sunday), provide a JSON object with the following exact structure:
 {
-  "postType": "string (e.g., Devlog, Screenshot, Announcement)",
+  "postTitle": "string (title of the post)",
   "platform": "string (e.g., Twitter, Instagram)",
   "content": "string (the actual post text)",
   "hashtags": ["string", "string", "string"] (3-5 hashtags),
-  "bestTime": "string (in EST format like '2:00 PM')"
+  "bestTime": "string (in EST format like '2:00 PM')",
+  "mediaSuggestion": "string (this is the suggested media for the post) (e.g. video of player jump off a building and making it to the other side)"
 }
 
 The response must be a valid JSON object with days as keys (Monday, Tuesday, etc.) and the above structure as values. Do not include any additional fields or text outside the JSON object.`;
@@ -128,13 +128,14 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
         .insert({
           user_id: user.id,
           game_id: game.id,
-          post_type: post.postType,
+          title: post.postTitle,
           platform: post.platform,
           content: post.content,
           hashtags: post.hashtags,
-          post_date: targetDate.toISOString().split('T')[0],
-          post_time: targetDate.toISOString().split('T')[1].split('.')[0],
-          created_at: new Date().toISOString()
+          localDate: targetDate.toISOString().split('T')[0],
+          scheduledTime: targetDate.toISOString().split('T')[1].split('.')[0],
+          time_to_post: targetDate.toISOString(),
+          media_suggestion: post.mediaSuggestion
         });
 
       if (error) {
@@ -143,8 +144,8 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
       }
 
       savedPosts.push({
-        postDate: targetDate.toISOString().split('T')[0],
-        postTime: targetDate.toISOString().split('T')[1].split('.')[0],
+        localDate: targetDate.toISOString().split('T')[0],
+        scheduledTime: targetDate.toISOString().split('T')[1].split('.')[0],
         ...post
       });
     }

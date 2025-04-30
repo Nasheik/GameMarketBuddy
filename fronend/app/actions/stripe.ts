@@ -86,11 +86,13 @@ export async function validatePromoCode(formData: FormData) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
-
+    console.log("Subscription added successfully");
     if (error) {
       console.error("Error creating subscription:", error);
       return redirect("/payment?error=Failed to create subscription");
     }
+
+    console.log("Subscription created successfully");
 
     // Check if user has any games
     const { data: games } = await supabase

@@ -63,6 +63,19 @@ export default async function PaymentPage({
     return redirect("/sign-in");
   }
 
+  // Check if user has an active or trialing subscription
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('status, current_period_end')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'trialing'])
+    .gt('current_period_end', new Date().toISOString())
+    .single();
+
+  if (subscription) {
+    return redirect('/create-game');
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">

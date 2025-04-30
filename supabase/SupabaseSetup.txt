@@ -5,6 +5,11 @@ Install + Run Docker Desktop
 CMD:
 npx supabase init
 npx supabase start -x vector
+npx supabase stop
+
+npx supabase login
+npx supabase link --project-ref [ProjectID] khieukuapuxgtvxpwhoo (then add --link to all other cmd)
+
 --- put migration file into supabase/migrations folder
 npx supabase migration list ---- lists the migrations that have been applied
 npx supabase db push -----  pushes the migration files
