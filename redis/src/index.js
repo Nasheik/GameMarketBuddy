@@ -13,6 +13,7 @@ export default {
   async function processJobs(env) {
     const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
     const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     // const supa2 = process.env.SUPABASE_URL;
   
     const now = new Date().toISOString();
@@ -23,7 +24,7 @@ export default {
     // 1. Fetch all due, unprocessed jobs
     const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?`, {
       headers: {
-        'apikey': NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
       }
