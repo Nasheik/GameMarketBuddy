@@ -112,12 +112,8 @@
 
 
 export default {
-    async fetch(request, env, ctx) {
-      return new Response("This endpoint is not meant to be called directly.");
-    },
-  
-    async scheduled(event, env, ctx) {
-      await processJobs(env);
+    async scheduled(controller, env, ctx) {
+      ctx.waitUntil(processJobs(env));
     }
   };
   
