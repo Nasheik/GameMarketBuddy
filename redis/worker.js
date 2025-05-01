@@ -111,16 +111,45 @@
 // app.listen(3333, () => console.log('🚀 Server running on port 3333'));
 
 
-
-
 export default {
     async fetch(request, env, ctx) {
-      return new Response('Hello from your Cloudflare Worker!', {
-        status: 200,
+      const SUPABASE_URL = env.SUPABASE_URL;
+      const SUPABASE_KEY = env.SUPABASE_KEY;
+  
+      const now = new Date().toISOString();
+  
+      // 1. Fetch all due, unprocessed jobs
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?status=eq.scheduled&time_to_post=lte.${now}`, {
         headers: {
-          'Content-Type': 'text/plain'
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
         }
       });
+  
+      const jobs = await res.json();
+  
+      // 2. Process jobs
+      for (const job of jobs) {
+        console.log(`Posting to ${job.platform}:`, job.content);
+  
+        // 🔁 Your logic: Send to API (e.g., Twitter/TikTok API)
+        // await sendToPlatform(job.platform, job.content);
+  
+        // 3. Mark as processed
+        await fetch(`${SUPABASE_URL}/rest/v1/scheduled_posts?id=eq.${job.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'published' })
+        });
+      }
+  
+      return new Response(`✅ Processed ${jobs.length} job(s)`);
     }
-}
+  };
+  
   
