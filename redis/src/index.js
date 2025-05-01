@@ -11,8 +11,8 @@ export default {
 
 
   async function processJobs(env) {
-    const SUPABASE_URL = env.SUPABASE_URL;
-    const SUPABASE_KEY = env.SUPABASE_KEY;
+    const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
+    const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
   
     const now = new Date().toISOString();
   
