@@ -21,9 +21,9 @@ export default {
     // console.log("sup2", supa2);
   
     // 1. Fetch all due, unprocessed jobs
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?status=eq.scheduled`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?`, {
       headers: {
-        'apikey': SUPABASE_KEY,
+        'apikey': NEXT_PUBLIC_SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
       }
