@@ -9,5 +9,10 @@
     "observability": {
         "enabled": true,
         "head_sampling_rate": 1
-      }
+      },
+      "vars": {
+        "NEXT_PUBLIC_SUPABASE_URL":"Test1",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY":"Test2",
+        "SUPABASE_SERVICE_ROLE_KEY":"Test3"
+        }
   }

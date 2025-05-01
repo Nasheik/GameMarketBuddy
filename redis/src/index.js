@@ -18,7 +18,7 @@ export default {
     const now = new Date().toISOString();
 
     console.log(SUPABASE_URL, now);
-    console.log("sup2", supa2);
+    // console.log("sup2", supa2);
   
     // 1. Fetch all due, unprocessed jobs
     const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?status=eq.scheduled&time_to_post=lte.${now}`, {
