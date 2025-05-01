@@ -29,6 +29,7 @@ export default {
     });
   
     const jobs = await res.json();
+    console.log("jobs", jobs);
     console.log(`${jobs.length} job(s)`);
   
     // 2. Process jobs
