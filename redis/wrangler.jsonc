@@ -9,5 +9,8 @@
     "observability": {
         "enabled": true,
         "head_sampling_rate": 1
-      }
+      },
+      "vars": {
+        "NEXT_PUBLIC_SUPABASE_URL":"https://khieukuapuxgtvxpwhoo.supabase.co"
+        }
   }
