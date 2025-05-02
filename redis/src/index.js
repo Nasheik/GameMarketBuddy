@@ -71,56 +71,37 @@ async function processJobs(env) {
 async function sendToTwitter(env, content) {
    console.log("Sending to Twitter: ", content);
 
-   function hashSha1(baseString, key) {
-      return HmacSHA1(baseString, key).toString(enc.Base64);
-   }
+   const url = "https://api.twitter.com/2/tweets";
 
-   const oauth = new OAuth({
-      consumer: { key: env.TWITTER_API_KEY, secret: env.TWITTER_API_SECRET },
-      signature_method: "HMAC-SHA1",
-      hash_function: hashSha1,
-   });
-
-   const token = {
-      key: env.TWITTER_ACCESS_TOKEN,
-      secret: env.TWITTER_ACCESS_SECRET,
-   };
-
-   const reqAuth = {
-      url: "https://api.twitter.com/2/tweets",
-      method: "POST",
+   const tweet = {
+      text: content,
    };
 
    try {
-      const url = "https://api.twitter.com/2/tweets";
-      const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
-
-      const tweet = {
-         text: content,
-      };
-
       const res = await fetch(url, {
          method: "POST",
          headers: {
-            ...oauth.toHeader(oauth.authorize(reqAuth, token)),
+            Authorization: `Bearer ${env.TWITTER_ACCESS_TOKEN}`,
             "Content-Type": "application/json",
          },
          body: JSON.stringify(tweet),
       });
 
-      console.log("Twitter response: ", res.ok, res.statusText);
+      const text = await res.text(); // Always read the body
+
+      console.log("Twitter response:", res.status, res.statusText);
+      console.log("Twitter body:", text);
+
       if (!res.ok) {
-         // console.log("Twitter response: ", res.text);
-         throw new Error(`Twitter API error: ${res.statusText}`);
+         throw new Error(`Twitter API error: ${res.status} - ${text}`);
       }
 
-      const data = await res.json();
-      console.log("Twitter response: ", JSON.stringify(data, null, 2));
-
-      return true; // Indicate success
+      const data = JSON.parse(text);
+      console.log("Tweet posted:", JSON.stringify(data, null, 2));
+      return true;
    } catch (error) {
       console.error("❌ Error posting to Twitter:", error);
-      return false; // Indicate failure
+      return false;
    }
 }
 
