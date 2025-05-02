@@ -32,7 +32,8 @@ interface Post {
   localDate?: string;  // User's selected time in local format
   timeToPost?: string;     // Combined date and time from database
   scheduledTime?: string;  // Time in HH:mm format
-  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   mediaSuggestion?: string;  // Media suggestion from database
   status?: 'draft' | 'scheduled' | 'published' | 'failed';
 }
@@ -50,6 +51,12 @@ export default function PostWeek() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [originalScheduledTime, setOriginalScheduledTime] = useState<string | null>(null);
+
+  const R2_PUBLIC_BASE = process.env.NEXT_PUBLIC_CLOUDFLARE_VIEW_URL;
+  const getPreviewUrl = (mediaUrl?: string) => {
+    if (!mediaUrl) return '';
+    return `${R2_PUBLIC_BASE}${mediaUrl}`;
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -120,7 +127,8 @@ export default function PostWeek() {
             timeToPost: post.time_to_post,
             scheduledTime: scheduledTime,
             status: post.status,
-            imageUrl: post.media_url,
+            mediaUrl: post.media_url,
+            mediaType: post.media_type,
             mediaSuggestion: post.media_suggestion
           };
         });
@@ -213,8 +221,8 @@ export default function PostWeek() {
           content: selectedPost.content,
           hashtags: selectedPost.hashtags,
           time_to_post: timeToPost,
-          media_url: selectedPost.imageUrl,
-          media_type: selectedPost.imageUrl ? 'image' : null
+          media_url: selectedPost.mediaUrl,
+          media_type: selectedPost.mediaType || null
         })
         .eq('game_id', selectedGame.id)
         .eq('local_date', selectedPost.localDate);
@@ -232,14 +240,18 @@ export default function PostWeek() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !selectedPost || !selectedGame) return;
-    
     setUploadingImage(true);
     try {
       const file = e.target.files[0];
-      console.log('Starting upload for file:', file.name, 'type:', file.type);
-      
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      if (!isImage && !isVideo) {
+        alert('Only image or video files are allowed.');
+        setUploadingImage(false);
+        return;
+      }
       // Get presigned URL from our API
       const response = await fetch('/api/upload-media', {
         method: 'POST',
@@ -251,7 +263,6 @@ export default function PostWeek() {
           fileType: file.type,
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         console.error('API Error:', {
@@ -261,10 +272,7 @@ export default function PostWeek() {
         });
         throw new Error(`Failed to get upload URL: ${response.status} ${response.statusText}`);
       }
-
       const { presignedUrl, fileUrl } = await response.json();
-      console.log('Got presigned URL:', presignedUrl);
-
       // Upload file directly to R2 using presigned URL
       const uploadResponse = await fetch(presignedUrl, {
         method: 'PUT',
@@ -275,49 +283,36 @@ export default function PostWeek() {
         },
         mode: 'cors',
       });
-
       if (!uploadResponse.ok) {
-        console.error('Upload Error:', {
-          status: uploadResponse.status,
-          statusText: uploadResponse.statusText
-        });
         throw new Error(`Failed to upload file: ${uploadResponse.status} ${uploadResponse.statusText}`);
       }
-
       console.log('Upload successful, file URL:', fileUrl);
-
-      // Save the file URL to the database
+      // Extract only the path from fileUrl
+      const filePath = fileUrl.substring(fileUrl.indexOf('/post-media/'));
+      // Save the file path to the database
       const { error: dbError } = await supabase
         .from('saved_posts')
         .update({
-          media_url: fileUrl,
-          media_type: file.type.startsWith('image/') ? 'image' : 'video'
+          media_url: filePath,
+          media_type: isImage ? 'image' : 'video'
         })
         .eq('game_id', selectedGame.id)
         .eq('local_date', selectedPost.localDate);
-
       if (dbError) {
-        console.error('Error saving media URL to database:', dbError);
         throw new Error('Failed to save media URL to database');
       }
-
-      // Update the post with the new media URL
-      setSelectedPost({ ...selectedPost, imageUrl: fileUrl });
+      // Update the post with the new media URL and type
+      setSelectedPost({ ...selectedPost, mediaUrl: filePath, mediaType: isImage ? 'image' : 'video' });
     } catch (error) {
-      console.error('Error uploading image:', error);
-      if (error instanceof Error && error.message.includes('CORS')) {
-        alert('Failed to upload image: CORS error. Please check your R2 bucket CORS configuration.');
-      } else {
-        alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+      alert(`Failed to upload media: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploadingImage(false);
     }
   };
 
-  const handleRemoveImage = () => {
+  const handleRemoveMedia = () => {
     if (!selectedPost) return;
-    setSelectedPost({ ...selectedPost, imageUrl: undefined });
+    setSelectedPost({ ...selectedPost, mediaUrl: undefined, mediaType: undefined });
   };
 
   const handleSchedule = async () => {
@@ -367,8 +362,8 @@ export default function PostWeek() {
         status: newStatus,
         ...(newStatus === 'scheduled' ? {
           time_to_post: timeToPost,
-          media_url: selectedPost.imageUrl,
-          media_type: selectedPost.imageUrl ? 'image' : null
+          media_url: selectedPost.mediaUrl,
+          media_type: selectedPost.mediaType || null
         } : {})
       };
 
@@ -653,21 +648,21 @@ export default function PostWeek() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Label className="text-base font-medium text-gray-700 dark:text-gray-300">
-                      Post Image
+                      Post Media
                     </Label>
                   </div>
                   <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3">
-                    {selectedPost.imageUrl ? (
+                    {selectedPost.mediaUrl ? (
                       <div className="relative">
-                        <img 
-                          src={selectedPost.imageUrl} 
-                          alt="Post preview" 
-                          className="w-full h-40 object-cover rounded-lg"
-                        />
+                        {selectedPost.mediaType === 'video' ? (
+                          <video src={getPreviewUrl(selectedPost.mediaUrl)} controls className="w-full h-40 object-cover rounded-lg" />
+                        ) : (
+                          <img src={getPreviewUrl(selectedPost.mediaUrl)} alt="Post preview" className="w-full h-40 object-cover rounded-lg" />
+                        )}
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={handleRemoveImage}
+                          onClick={handleRemoveMedia}
                           className="absolute top-2 right-2"
                         >
                           <X className="h-4 w-4" />
@@ -677,18 +672,18 @@ export default function PostWeek() {
                       <div className="flex flex-col items-center justify-center h-40">
                         <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-2" />
                         <p className="text-gray-500 dark:text-gray-400 mb-2 text-xs text-center">
-                          Drag and drop an image here, or click to select
+                          Drag and drop an image or video here, or click to select
                         </p>
                         <input
                           type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
+                          accept="image/*,video/*"
+                          onChange={handleMediaUpload}
                           className="hidden"
-                          id="image-upload"
+                          id="media-upload"
                         />
                         <Button
                           variant="outline"
-                          onClick={() => document.getElementById('image-upload')?.click()}
+                          onClick={() => document.getElementById('media-upload')?.click()}
                           disabled={uploadingImage}
                           size="sm"
                           className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -699,7 +694,7 @@ export default function PostWeek() {
                               Uploading...
                             </>
                           ) : (
-                            'Select Image'
+                            'Select Media'
                           )}
                         </Button>
                       </div>
