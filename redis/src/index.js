@@ -1,3 +1,23 @@
+// Source: https://github.com/austin-mc/TwitterWorker/blob/main/index.js
+
+import { HmacSHA1, enc } from "crypto-js";
+import OAuth from "oauth-1.0a";
+
+const oauth = new OAuth({
+   consumer: { key: TWITTER_API_KEY, secret: TWITTER_API_SECRET },
+   signature_method: "HMAC-SHA1",
+   hash_function: hashSha1,
+});
+
+function hashSha1(baseString, key) {
+   return HmacSHA1(baseString, key).toString(enc.Base64);
+}
+
+const token = {
+   key: TWITTER_ACCESS_TOKEN,
+   secret: TWITTER_ACCESS_SECRET,
+};
+
 export default {
    async scheduled(controller, env, ctx) {
       ctx.waitUntil(processJobs(env));
@@ -76,12 +96,13 @@ async function sendToTwitter(env, content) {
       const res = await fetch(url, {
          method: "POST",
          headers: {
-            Authorization: `Bearer ${twitterAccessToken}`,
+            ...oauth.toHeader(oauth.authorize(reqAuth, token)),
             "Content-Type": "application/json",
          },
          body: JSON.stringify(tweet),
       });
 
+      console.log("Twitter response: ", res.ok, res.statusText);
       if (!res.ok) {
          // console.log("Twitter response: ", res.text);
          throw new Error(`Twitter API error: ${res.statusText}`);
