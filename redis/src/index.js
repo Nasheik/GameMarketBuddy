@@ -54,15 +54,15 @@ async function processJobs(env) {
       const newStatus = isSuccess ? "published" : "failed";
 
       // 3. Mark as processed
-      await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?id=eq.${job.id}`, {
-         method: "PATCH",
-         headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-            "Content-Type": "application/json",
-         },
-         body: JSON.stringify({ status: newStatus }),
-      });
+      // await fetch(`${SUPABASE_URL}/rest/v1/saved_posts?id=eq.${job.id}`, {
+      //    method: "PATCH",
+      //    headers: {
+      //       apikey: SUPABASE_KEY,
+      //       Authorization: `Bearer ${SUPABASE_KEY}`,
+      //       "Content-Type": "application/json",
+      //    },
+      //    body: JSON.stringify({ status: newStatus }),
+      // });
    }
 
    console.log(`✅ Processed ${jobs.length} job(s)`);
