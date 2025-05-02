@@ -67,7 +67,7 @@ async function sendToTwitter(env, content) {
    console.log("Sending to Twitter: ", content);
    try {
       const url = "https://api.twitter.com/2/tweets";
-      const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
+      const twitterAccessToken = env.BEARER;
 
       const tweet = {
          text: content,
