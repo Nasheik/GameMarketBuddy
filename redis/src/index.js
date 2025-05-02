@@ -1,4 +1,9 @@
-// Source: Enhanced from https://github.com/austin-mc/TwitterWorker/blob/main/index.js
+// Now post the tweet, with media attachment if available
+const tweetUrl = "https://api.twitter.com/2/tweets";
+const tweetAuth = {
+   url: tweetUrl,
+   method: "POST",
+}; // Source: Enhanced from https://github.com/austin-mc/TwitterWorker/blob/main/index.js
 //Used for twitter api auth
 import { HmacSHA1, enc } from "crypto-js";
 import OAuth from "oauth-1.0a";
@@ -25,8 +30,13 @@ const token = {
    secret: TWITTER_ACCESS_SECRET,
 };
 
-// Constants for media handling
-const CLOUDFLARE_DOMAIN = CLOUDFLARE_PUBLIC_DOMAIN;
+// Debug environment variables during initialization
+console.log("Initializing Twitter Worker with following configuration:");
+console.log(
+   "- CLOUDFLARE_PUBLIC_DOMAIN is set: " +
+      (typeof CLOUDFLARE_PUBLIC_DOMAIN !== "undefined")
+);
+// Don't log the actual values for security
 
 async function processJobs(event) {
    const SUPABASE_URL = NEXT_PUBLIC_SUPABASE_URL;
@@ -80,39 +90,37 @@ async function processJobs(event) {
    console.log(`✅ Processed ${jobs.length} job(s)`);
 }
 
-async function sendToTwitter(content, mediaR2Key) {
+async function sendToTwitter(content, mediaUrl) {
    console.log("Sending to Twitter: ", content);
+   console.log("Media URL (if any): ", mediaUrl || "None");
 
    try {
-      // If we have a media key, process it first
+      // If we have a media URL, process it first
       let mediaId = null;
 
-      if (mediaR2Key) {
-         console.log(`Processing media from R2: ${mediaR2Key}`);
-         mediaId = await uploadTwitterMedia(mediaR2Key);
+      if (mediaUrl) {
+         console.log(`Processing media from URL: ${mediaUrl}`);
+         mediaId = await uploadTwitterMedia(mediaUrl);
 
          if (!mediaId) {
-            throw new Error("Failed to upload media to Twitter");
+            console.warn(
+               "Media upload failed, proceeding with text-only tweet"
+            );
+         } else {
+            console.log(
+               `Successfully uploaded media to Twitter with ID: ${mediaId}`
+            );
          }
-
-         console.log(
-            `Successfully uploaded media to Twitter with ID: ${mediaId}`
-         );
       }
 
-      // Now post the tweet, with media attachment if available
-      const tweetUrl = "https://api.twitter.com/2/tweets";
-      const tweetAuth = {
-         url: tweetUrl,
-         method: "POST",
-      };
-
+      // Create the request data for the tweet
       const tweetBody = {
          text: content,
       };
 
       // Attach media ID if we have one
       if (mediaId) {
+         // Twitter v2 API format for media attachment
          tweetBody.media = {
             media_ids: [mediaId],
          };
@@ -150,36 +158,69 @@ async function uploadTwitterMedia(mediaUrl) {
          throw new Error("No media URL provided");
       }
 
-      console.log(`Fetching media from path: ${mediaUrl}`);
+      console.log(`Processing media from URL: ${mediaUrl}`);
 
-      // Get the full URL using the CLOUDFLARE_PUBLIC_DOMAIN environment variable
-      const mediaFullUrl = `${CLOUDFLARE_PUBLIC_DOMAIN}${mediaUrl}`;
-      console.log(`Full media URL: ${mediaFullUrl}`);
+      // Check if the URL is already absolute (starts with http:// or https://)
+      let mediaFullUrl = mediaUrl;
+      if (!mediaUrl.startsWith("http://") && !mediaUrl.startsWith("https://")) {
+         // Remove any leading slash to avoid double slashes
+         const cleanPath = mediaUrl.startsWith("/")
+            ? mediaUrl.substring(1)
+            : mediaUrl;
+         // Make sure CLOUDFLARE_PUBLIC_DOMAIN ends with a slash
+         const domainWithSlash = CLOUDFLARE_PUBLIC_DOMAIN.endsWith("/")
+            ? CLOUDFLARE_PUBLIC_DOMAIN
+            : `${CLOUDFLARE_PUBLIC_DOMAIN}/`;
+         mediaFullUrl = `${domainWithSlash}${cleanPath}`;
+      }
 
-      // Fetch the media file
-      const mediaResponse = await fetch(mediaFullUrl);
+      console.log(`Full media URL for fetch: ${mediaFullUrl}`);
+
+      // Fetch the media file with proper error handling
+      const mediaResponse = await fetch(mediaFullUrl, {
+         method: "GET",
+         // Add headers that might help with CORS or authorization if needed
+         headers: {
+            Accept: "*/*",
+         },
+      });
 
       if (!mediaResponse.ok) {
+         const errorText = await mediaResponse
+            .text()
+            .catch(() => "No error text available");
          throw new Error(
-            `Failed to fetch media: ${mediaResponse.status} ${mediaResponse.statusText}`
+            `Failed to fetch media: ${mediaResponse.status} ${mediaResponse.statusText} - ${errorText}`
          );
       }
 
+      // Get content type from response if available
+      const contentTypeFromHeader = mediaResponse.headers.get("content-type");
+
       // Get the file content as a buffer
       const fileBuffer = await mediaResponse.arrayBuffer();
-      const fileBlob = new Blob([fileBuffer]);
+      const fileBlob = new Blob([fileBuffer], {
+         type: contentTypeFromHeader || "application/octet-stream",
+      });
 
-      // Determine content type from file extension or default to video/mp4
-      const fileExtension = mediaUrl.split(".").pop().toLowerCase();
-      let contentType = "video/mp4"; // Default
+      // Determine content type from file extension or response header
+      let contentType = contentTypeFromHeader || "video/mp4"; // Default
 
-      if (fileExtension === "mov") contentType = "video/quicktime";
-      else if (fileExtension === "avi") contentType = "video/x-msvideo";
-      else if (fileExtension === "webm") contentType = "video/webm";
-      else if (fileExtension === "jpg" || fileExtension === "jpeg")
-         contentType = "image/jpeg";
-      else if (fileExtension === "png") contentType = "image/png";
-      else if (fileExtension === "gif") contentType = "image/gif";
+      // If no content type from header, try to guess from extension
+      if (!contentTypeFromHeader) {
+         const fileExtension = mediaUrl.split(".").pop().toLowerCase();
+
+         if (fileExtension === "mov") contentType = "video/quicktime";
+         else if (fileExtension === "avi") contentType = "video/x-msvideo";
+         else if (fileExtension === "webm") contentType = "video/webm";
+         else if (fileExtension === "mp4") contentType = "video/mp4";
+         else if (fileExtension === "jpg" || fileExtension === "jpeg")
+            contentType = "image/jpeg";
+         else if (fileExtension === "png") contentType = "image/png";
+         else if (fileExtension === "gif") contentType = "image/gif";
+      }
+
+      console.log(`Using content type: ${contentType} for media upload`);
 
       // Step 1: Initialize the upload
       const initUrl = "https://upload.twitter.com/1.1/media/upload.json";
