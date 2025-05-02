@@ -2,7 +2,7 @@
    "name": "gmbworker",
    "compatibility_date": "2025-05-01",
    "triggers": {
-      "crons": ["*/10 * * * *"]
+      "crons": ["*/5 * * * *"]
    },
    "observability": {
       "enabled": true,
