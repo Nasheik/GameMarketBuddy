@@ -87,6 +87,8 @@ async function sendToTwitter(env, content) {
          body: JSON.stringify(tweet),
       });
 
+      console.log("Done Fetch");
+
       const text = await res.text(); // Always read the body
 
       console.log("Twitter response:", res.status, res.statusText);
