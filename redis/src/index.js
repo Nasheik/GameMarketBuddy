@@ -91,7 +91,10 @@ async function sendToTwitter(env, content) {
       method: "POST",
    };
 
+   console.log("trying");
+
    try {
+      console.log("trying2");
       const url = "https://api.twitter.com/2/tweets";
       const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
 
