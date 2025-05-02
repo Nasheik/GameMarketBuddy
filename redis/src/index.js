@@ -98,9 +98,9 @@ async function sendToTwitter(env, content) {
       const url = "https://api.twitter.com/2/tweets";
       const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
 
-      const tweet = {
+      var reqBody = JSON.stringify({
          text: content,
-      };
+      });
 
       console.log("Fetching");
 
@@ -110,7 +110,7 @@ async function sendToTwitter(env, content) {
             ...oauth.toHeader(oauth.authorize(reqAuth, token)),
             "Content-Type": "application/json",
          },
-         body: JSON.stringify(tweet),
+         body: reqBody,
       });
 
       console.log("testing");
