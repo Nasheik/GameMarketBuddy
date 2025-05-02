@@ -3,21 +3,6 @@
 import { HmacSHA1, enc } from "crypto-js";
 import OAuth from "oauth-1.0a";
 
-const oauth = new OAuth({
-   consumer: { key: TWITTER_API_KEY, secret: TWITTER_API_SECRET },
-   signature_method: "HMAC-SHA1",
-   hash_function: hashSha1,
-});
-
-function hashSha1(baseString, key) {
-   return HmacSHA1(baseString, key).toString(enc.Base64);
-}
-
-const token = {
-   key: TWITTER_ACCESS_TOKEN,
-   secret: TWITTER_ACCESS_SECRET,
-};
-
 export default {
    async scheduled(controller, env, ctx) {
       ctx.waitUntil(processJobs(env));
@@ -85,6 +70,22 @@ async function processJobs(env) {
 
 async function sendToTwitter(env, content) {
    console.log("Sending to Twitter: ", content);
+
+   function hashSha1(baseString, key) {
+      return HmacSHA1(baseString, key).toString(enc.Base64);
+   }
+
+   const oauth = new OAuth({
+      consumer: { key: env.TWITTER_API_KEY, secret: env.TWITTER_API_SECRET },
+      signature_method: "HMAC-SHA1",
+      hash_function: hashSha1,
+   });
+
+   const token = {
+      key: env.TWITTER_ACCESS_TOKEN,
+      secret: env.TWITTER_ACCESS_SECRET,
+   };
+
    try {
       const url = "https://api.twitter.com/2/tweets";
       const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
