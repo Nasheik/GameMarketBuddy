@@ -1,17 +1,15 @@
 {
-    "name": "gmbworker",
-    "compatibility_date":"2025-05-01",
-    "triggers": {
-      "crons": [
-        "* * * * *"
-      ]
-    },
-    "observability": {
-        "enabled": true,
-        "head_sampling_rate": 1
-      },
-      "vars": {
-        "NEXT_PUBLIC_SUPABASE_URL":"https://khieukuapuxgtvxpwhoo.supabase.co",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaWV1a3VhcHV4Z3R2eHB3aG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3Nzc1MzUsImV4cCI6MjA1OTM1MzUzNX0.nazFwG7EssqTSFg5AMDarWaGzAXF32mjMXXk1DHgltY"
-        }
-  }
+   "name": "gmbworker",
+   "compatibility_date": "2025-05-01",
+   "triggers": {
+      "crons": ["*/10 * * * *"]
+   },
+   "observability": {
+      "enabled": true,
+      "head_sampling_rate": 1
+   },
+   "vars": {
+      "NEXT_PUBLIC_SUPABASE_URL": "https://khieukuapuxgtvxpwhoo.supabase.co",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoaWV1a3VhcHV4Z3R2eHB3aG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3Nzc1MzUsImV4cCI6MjA1OTM1MzUzNX0.nazFwG7EssqTSFg5AMDarWaGzAXF32mjMXXk1DHgltY"
+   }
+}
