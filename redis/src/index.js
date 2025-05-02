@@ -86,6 +86,11 @@ async function sendToTwitter(env, content) {
       secret: env.TWITTER_ACCESS_SECRET,
    };
 
+   const reqAuth = {
+      url: "https://api.twitter.com/2/tweets",
+      method: "POST",
+   };
+
    try {
       const url = "https://api.twitter.com/2/tweets";
       const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
