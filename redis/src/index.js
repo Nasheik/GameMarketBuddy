@@ -69,6 +69,10 @@ async function sendToTwitter(env, content) {
       const url = "https://api.twitter.com/2/tweets";
       const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
 
+      const tweet = {
+         text: content,
+      };
+
       const res = await fetch(url, {
          method: "POST",
          headers: {
