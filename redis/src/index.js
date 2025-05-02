@@ -32,11 +32,7 @@ const token = {
 
 // Debug environment variables during initialization
 console.log("Initializing Twitter Worker with following configuration:");
-console.log(
-   "- CLOUDFLARE_PUBLIC_DOMAIN is set: " +
-      (typeof CLOUDFLARE_PUBLIC_DOMAIN !== "undefined")
-);
-// Don't log the actual values for security
+console.log("- R2 binding availability: " + (typeof R2 !== "undefined"));
 
 async function processJobs(event) {
    const SUPABASE_URL = NEXT_PUBLIC_SUPABASE_URL;
@@ -158,47 +154,29 @@ async function uploadTwitterMedia(mediaUrl) {
          throw new Error("No media URL provided");
       }
 
-      console.log(`Processing media from URL: ${mediaUrl}`);
+      console.log(`Processing media from path: ${mediaUrl}`);
 
-      // Check if the URL is already absolute (starts with http:// or https://)
-      let mediaFullUrl = mediaUrl;
-      if (!mediaUrl.startsWith("http://") && !mediaUrl.startsWith("https://")) {
-         // Remove any leading slash to avoid double slashes
-         const cleanPath = mediaUrl.startsWith("/")
-            ? mediaUrl.substring(1)
-            : mediaUrl;
-         // Make sure CLOUDFLARE_PUBLIC_DOMAIN ends with a slash
-         const domainWithSlash = CLOUDFLARE_PUBLIC_DOMAIN.endsWith("/")
-            ? CLOUDFLARE_PUBLIC_DOMAIN
-            : `${CLOUDFLARE_PUBLIC_DOMAIN}/`;
-         mediaFullUrl = `${domainWithSlash}${cleanPath}`;
+      // Extract filename from the mediaUrl path
+      // This assumes mediaUrl contains only the object key/path in R2
+      const fileName = mediaUrl.split("/").pop();
+      console.log(`Attempting to get file '${fileName}' from R2`);
+
+      // Access the file directly from R2 using the binding
+      const r2Object = await R2.get(mediaUrl);
+
+      if (!r2Object) {
+         throw new Error(`Object not found in R2: ${mediaUrl}`);
       }
 
-      console.log(`Full media URL for fetch: ${mediaFullUrl}`);
-
-      // Fetch the media file with proper error handling
-      const mediaResponse = await fetch(mediaFullUrl, {
-         method: "GET",
-         // Add headers that might help with CORS or authorization if needed
-         headers: {
-            Accept: "*/*",
-         },
-      });
-
-      if (!mediaResponse.ok) {
-         const errorText = await mediaResponse
-            .text()
-            .catch(() => "No error text available");
-         throw new Error(
-            `Failed to fetch media: ${mediaResponse.status} ${mediaResponse.statusText} - ${errorText}`
-         );
-      }
-
-      // Get content type from response if available
-      const contentTypeFromHeader = mediaResponse.headers.get("content-type");
+      console.log(`Successfully retrieved object from R2: ${mediaUrl}`);
+      console.log(`Object size: ${r2Object.size} bytes`);
+      console.log(
+         `Object type: ${r2Object.httpMetadata?.contentType || "unknown"}`
+      );
 
       // Get the file content as a buffer
-      const fileBuffer = await mediaResponse.arrayBuffer();
+      const fileBuffer = await r2Object.arrayBuffer();
+      const contentTypeFromHeader = r2Object.httpMetadata?.contentType;
       const fileBlob = new Blob([fileBuffer], {
          type: contentTypeFromHeader || "application/octet-stream",
       });
