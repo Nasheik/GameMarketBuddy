@@ -42,7 +42,8 @@ async function processJobs(env) {
 
       // Process the job based on the platform
       let isSuccess = false;
-      if (job.platform === "twitter") isSuccess = sendToTwitter(job.content);
+      if (job.platform === "twitter")
+         isSuccess = sendToTwitter(env, job.content);
       else if (job.platform === "tiktok") isSuccess = sendToTikTok(job.content);
       else console.log(`❌ Unsupported platform: ${job.platform}`);
       const newStatus = isSuccess ? "published" : "failed";
@@ -62,16 +63,16 @@ async function processJobs(env) {
    console.log(`✅ Processed ${jobs.length} job(s)`);
 }
 
-async function sendToTwitter(content) {
+async function sendToTwitter(env, content) {
    console.log("Sending to Twitter: ", content);
    try {
       const url = "https://api.twitter.com/2/tweets";
-      const twitterAccessToken = process.env.TWITTER_ACCESS_TOKEN;
+      const twitterAccessToken = env.TWITTER_ACCESS_TOKEN;
 
       const res = await fetch(url, {
          method: "POST",
          headers: {
-            Authorization: `Bearer ${bearerToken}`,
+            Authorization: `Bearer ${twitterAccessToken}`,
             "Content-Type": "application/json",
          },
          body: JSON.stringify(tweet),
