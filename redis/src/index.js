@@ -31,10 +31,10 @@ const reqAuth = {
    method: "POST",
 };
 
-async function processJobs(env) {
-   const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
-   const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-   const SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+async function processJobs(event) {
+   const SUPABASE_URL = NEXT_PUBLIC_SUPABASE_URL;
+   const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY;
+   const SUPABASE_ANON_KEY = NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
    const now = new Date().toISOString();
 
@@ -60,7 +60,7 @@ async function processJobs(env) {
       // Process the job based on the platform
       let isSuccess = false;
       if (job.platform === "twitter")
-         isSuccess = await sendToTwitter(env, job.content);
+         isSuccess = await sendToTwitter(job.content);
       else if (job.platform === "tiktok")
          isSuccess = await sendToTikTok(job.content);
       else console.log(`❌ Unsupported platform: ${job.platform}`);
@@ -116,7 +116,7 @@ async function sendToTwitter(content) {
 async function sendToTikTok(content) {
    console.log("Sending to TikTok: ", content);
    try {
-      const tiktokAccessToken = process.env.TIKTOK_ACCESS_TOKEN;
+      const tiktokAccessToken = TIKTOK_ACCESS_TOKEN;
 
       const initRes = await axios.post(
          "https://open.tiktokapis.com/v2/post/publish/inbox/video/init/",
