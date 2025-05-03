@@ -69,7 +69,7 @@ Development Stage: ${game.development_stage}
 For each day of the week (Monday through Sunday), provide a JSON object with the following exact structure:
 {
   "postTitle": "string (title of the post)",
-  "platform": "string (e.g., Twitter, Instagram)",
+  "platform": "string (e.g., Twitter, TikTok)",
   "content": "string (the actual post text)",
   "hashtags": ["string", "string", "string"] (3-5 hashtags),
   "bestTime": "string (in EST format like '2:00 PM')",
@@ -123,6 +123,11 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
       // Set the time to 12:00 PM UTC
       targetDate.setHours(12, 0, 0, 0);
       
+      // Sanitize mediaSuggestion to remove leading slash if present
+      const sanitizedMediaSuggestion = post.mediaSuggestion.startsWith('/')
+        ? post.mediaSuggestion.slice(1)
+        : post.mediaSuggestion;
+      
       const { error } = await supabase
         .from('saved_posts')
         .insert({
@@ -132,10 +137,9 @@ The response must be a valid JSON object with days as keys (Monday, Tuesday, etc
           platform: post.platform,
           content: post.content,
           hashtags: post.hashtags,
-          localDate: targetDate.toISOString().split('T')[0],
-          scheduledTime: targetDate.toISOString().split('T')[1].split('.')[0],
+          local_date: targetDate.toISOString().split('T')[0],
           time_to_post: targetDate.toISOString(),
-          media_suggestion: post.mediaSuggestion
+          media_suggestion: sanitizedMediaSuggestion
         });
 
       if (error) {

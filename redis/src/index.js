@@ -62,11 +62,11 @@ async function processJobs(event) {
 
       // Process the job based on the platform
       let isSuccess = false;
-      if (job.platform === "twitter") {
+      if (job.platform.toLowerCase() === "twitter") {
          // Build the R2 key from media_url, if present
          const mediaR2Key = job.media_url ? job.media_url : null;
          isSuccess = await sendToTwitter(job.content, mediaR2Key);
-      } else if (job.platform === "tiktok")
+      } else if (job.platform.toLowerCase() === "tiktok")
          isSuccess = await sendToTikTok(job.content);
       else console.log(`❌ Unsupported platform: ${job.platform}`);
       const newStatus = isSuccess ? "published" : "failed";
